@@ -400,7 +400,7 @@ function Wildcard() {
 
 // Routes
 
-const routes = [
+const routes = {
   param,
   lazyPage,
   paramDetail,
@@ -412,7 +412,7 @@ const routes = [
   faulty,
   lazySection2,
   lazySection1
-];
+};
 
 const logMiddleware = (history: HistoryLike) => {
   const { go, push } = history;

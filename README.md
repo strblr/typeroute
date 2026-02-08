@@ -303,7 +303,7 @@ Beyond paths and components, child routes also inherit search param validators, 
 
 # Setting up the router
 
-Before setting up the router, you need to collect your navigable routes into an array. When building nested route hierarchies, you'll often create intermediate parent routes solely for grouping and shared layouts. These intermediate routes shouldn't be included in your routes array - only the final, navigable routes should be:
+Before setting up the router, you need to collect your navigable routes into a collection (either array or record). When building nested route hierarchies, you'll often create intermediate parent routes solely for grouping and shared layouts. These intermediate routes shouldn't be included in your routes collection - only the final, navigable routes should be:
 
 ```tsx
 // Intermediate route used for hierarchy
@@ -315,13 +315,16 @@ const about = layout.route("/about").component(About);
 
 // Collect only the navigable routes
 const routes = [home, about]; // ✅ Don't include `layout`
+
+// Or equivalently:
+const routes = { home, about };
 ```
 
-This makes sure that only actual pages can be matched and appear in autocomplete. The intermediate routes still exist as part of the hierarchy, they just aren't directly navigable. Note that the order of routes in the array doesn't matter - TypeRoute uses a [ranking algorithm](#route-matching-and-ranking) to pick the most specific match.
+This makes sure that only actual pages can be matched and appear in autocomplete. The intermediate routes still exist as part of the hierarchy, they just aren't directly navigable. Note that the order of routes in the collection doesn't matter - TypeRoute uses a [ranking algorithm](#route-matching-and-ranking) to pick the most specific match.
 
 The `RouterRoot` component is the entry point to TypeRoute. It listens to URL changes, matches the current path against your routes, and renders the matching route's component hierarchy.
 
-There are two ways to set it up. The simplest is passing your routes array directly to `RouterRoot`. This creates a router instance internally (accessible via `useRouter`):
+There are two ways to set it up. The simplest is passing your routes collection directly to `RouterRoot`. This creates a router instance internally (accessible via `useRouter`):
 
 ```tsx
 import { RouterRoot } from "@typeroute/router";
@@ -1118,7 +1121,7 @@ For the path `/users/42`:
 /users/*    → [static, wildcard] → weights [2, 0]
 ```
 
-This ranking algorithm means you don't need to order your routes array carefully. Define them in any order and TypeRoute figures out the right match regardless:
+This ranking algorithm means you don't need to order your routes carefully. Define them in any order and TypeRoute figures out the right match regardless:
 
 ```tsx
 const routes = [
@@ -1524,7 +1527,7 @@ The `Router` class is the core of TypeRoute. You can create an instance directly
 **Properties:**
 
 - `router.basePath` - The configured base path
-- `router.routes` - The array of routes
+- `router.routes` - The array of navigable routes
 - `router.history` - The history instance
 - `router.ssrContext` - The SSR context (if provided)
 - `router.defaultLinkOptions` - Default link options
@@ -1920,7 +1923,7 @@ const unsubscribe = history.subscribe(() => {
 
 ```tsx
 interface RouterOptions {
-  routes: Route[]; // Array of navigable routes (required)
+  routes: Route[] | Record<string, Route>; // Collection of navigable routes
   basePath?: string; // Base path prefix (default: "/")
   history?: HistoryLike; // History implementation (default: BrowserHistory)
   ssrContext?: SSRContext; // Context for server-side rendering

@@ -9,7 +9,7 @@ import {
   absolutePath
 } from "../utils";
 import type {
-  RouteList,
+  NavigableRoute,
   RouterOptions,
   Pattern,
   GetRoute,
@@ -23,7 +23,7 @@ import type {
 } from "../types";
 
 export class Router {
-  readonly routes: RouteList;
+  readonly routes: ReadonlyArray<NavigableRoute>;
   readonly basePath: string;
   readonly history: HistoryLike;
   readonly ssrContext?: SSRContext;
@@ -38,13 +38,13 @@ export class Router {
       ssrContext,
       defaultLinkOptions
     } = options;
-    this.routes = routes;
+    this.routes = Object.values(routes);
     this.basePath = normalizePath(basePath);
     this.history = history ?? new BrowserHistory();
     this.ssrContext = ssrContext;
     this.defaultLinkOptions = defaultLinkOptions;
     this._ = {
-      routeMap: new Map(routes.map(route => [route._.pattern, route]))
+      routeMap: new Map(this.routes.map(route => [route._.pattern, route]))
     };
   }
 

@@ -8,11 +8,13 @@ import type { MaybeKey, OptionalOnUndefined } from "./utils";
 
 export interface Register {}
 
-export type RouteList = Register extends {
-  routes: infer RouteList extends ReadonlyArray<Route>;
-}
-  ? RouteList
-  : ReadonlyArray<Route>;
+export type NavigableRoute = Register extends { routes: infer Routes }
+  ? Routes extends ReadonlyArray<Route>
+    ? Routes[number]
+    : Routes extends Record<string, Route>
+    ? Routes[keyof Routes]
+    : Route
+  : Route;
 
 export type Handle = Register extends { handle: infer Handle } ? Handle : any;
 
@@ -51,17 +53,17 @@ export interface PreloadContext<Ps extends {} = any, S extends {} = any> {
 // Router
 
 export interface RouterOptions {
-  routes: RouteList;
+  routes: ReadonlyArray<NavigableRoute> | Record<string, NavigableRoute>;
   basePath?: string;
   history?: HistoryLike;
   ssrContext?: SSRContext;
   defaultLinkOptions?: LinkOptions;
 }
 
-export type Pattern = RouteList[number]["_"]["pattern"];
+export type Pattern = NavigableRoute["_"]["pattern"];
 
 export type GetRoute<P extends Pattern> = Extract<
-  RouteList[number],
+  NavigableRoute,
   { _: { pattern: P } }
 >;
 
