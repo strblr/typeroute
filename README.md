@@ -402,15 +402,20 @@ function About() {
 }
 ```
 
-Then in your root app component file, import all the routes, register them with module augmentation, and render `RouterRoot`:
+Then add a file that re-exports all your routes:
+
+```ts
+// pages/routes.ts
+export * from "./home";
+export * from "./about";
+```
+
+Now in your root app component file, import all the routes as a namespace, register them with module augmentation, and render `RouterRoot`:
 
 ```tsx
 // app.tsx
 import { RouterRoot } from "@typeroute/router";
-import { home } from "./pages/home";
-import { about } from "./pages/about";
-
-const routes = [home, about];
+import * as routes from "./pages/routes";
 
 export function App() {
   return <RouterRoot routes={routes} />;
@@ -422,6 +427,8 @@ declare module "@typeroute/router" {
   }
 }
 ```
+
+Because `routes` is a namespace object whose values are your route definitions, TypeRoute picks them up automatically - no need to manually maintain a routes collection. When you add a new page, just create the file and re-export it from `routes.ts`.
 
 But again, this is just one approach. You could keep all routes in a single file, split them by feature, organize them by route depth, whatever fits your project. TypeRoute doesn't care where the routes come from or how you structure your files.
 
