@@ -2025,10 +2025,11 @@ interface PreloadContext {
 
 # Roadmap
 
-- Possibility to pass an arbitrary context to the Router instance for later use in preloads?
+- Possibility to pass an arbitrary context to the Router instance for later use in preloads.
 - Relative path navigation? Not sure it's worth the extra bundle size given that users can export/import route objects and pass them as navigation option.
-- Refactor: APIs like useParams, useSearch and useMatch should accept any route object and not just rely on the global routes array.
+- Refactor: APIs like useParams, useSearch and useMatch should accept any route object and not just rely on the global routes collection.
 - Refactor: allow `route()` and `.route()` to be called without passing an argument (defaulting to "/")?
+- A builder method `.index(component)` to simplify patterns like `useOutlet() ?? <div>Index page</div>`, rendering a component only when no child route matched. In practice, this can spare the definition of a child route for `"/"`.
 - Document usage in test environments
 - Navigation blockers (`useBlocker`, etc.)
 - Open to suggestions, we can discuss them [here](https://github.com/strblr/typeroute/discussions).
