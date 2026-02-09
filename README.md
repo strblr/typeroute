@@ -144,7 +144,7 @@ If you believe there's a mistake in the comparison table, please [open an issue]
   - [Dynamic page titles](#dynamic-page-titles)
 - [API reference](#api-reference)
   - [Router class](#router-class)
-  - [Route class](#route-class)
+  - [Route builder](#route-builder)
   - [Middleware](#middleware)
   - [Hooks](#hooks)
   - [Components](#components)
@@ -1617,7 +1617,7 @@ await router.preload({ to: "/user/:id", params: { id: "42" } });
 await router.preload({ to: searchPage, search: { q: "test" } });
 ```
 
-## Route class
+## Route builder
 
 Routes are created with the `route()` function and configured by chaining methods.
 
