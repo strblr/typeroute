@@ -4,7 +4,7 @@ import type {
   Handle,
   Middleware,
   Validator,
-  PreloadContext,
+  PreloadOptions,
   ComponentLoader
 } from "./types";
 import {
@@ -49,7 +49,7 @@ export class Route<
     validate: (search: Record<string, unknown>) => S;
     handles: Handle[];
     components: ComponentType[];
-    preloads: ((context: PreloadContext) => Promise<any>)[];
+    preloads: ((options: PreloadOptions) => Promise<any>)[];
     p?: Route;
   };
 
@@ -106,17 +106,14 @@ export class Route<
   };
 
   preload = (
-    preload: (context: PreloadContext<Ps, S>) => Promise<any>
+    preload: (options: PreloadOptions<Ps, S>) => Promise<any>
   ): Route<P, Ps, S> => {
     return new Route({
       ...this._,
       preloads: [
         ...this._.preloads,
-        context =>
-          preload({
-            params: context.params as Ps,
-            search: this._.validate(context.search)
-          })
+        options =>
+          preload({ ...options, search: this._.validate(options.search) })
       ]
     });
   };

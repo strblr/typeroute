@@ -17,7 +17,11 @@ type RemoveTrailingSlash<P extends string> = P extends `${infer Prefix}/`
     : Prefix
   : P;
 
-export type MaybeKey<K extends string, T> = T extends EmptyObject
+export type MaybeUndefinedKey<K extends string, T> = undefined extends T
+  ? { [P in K]?: T }
+  : { [P in K]: T };
+
+export type MaybeObjectKey<K extends string, T> = T extends EmptyObject
   ? { [P in K]?: EmptyObject }
   : {} extends T
   ? { [P in K]?: T }

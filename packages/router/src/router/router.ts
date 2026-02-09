@@ -19,6 +19,7 @@ import type {
   HistoryLike,
   HistoryPushOptions,
   LinkOptions,
+  Context,
   SSRContext
 } from "../types";
 
@@ -26,6 +27,7 @@ export class Router {
   readonly routes: ReadonlyArray<NavigableRoute>;
   readonly basePath: string;
   readonly history: HistoryLike;
+  readonly context: Context;
   readonly ssrContext?: SSRContext;
   readonly defaultLinkOptions?: LinkOptions;
   private readonly _: { routeMap: Map<string, Route> };
@@ -35,12 +37,14 @@ export class Router {
       routes,
       basePath = "/",
       history,
+      context,
       ssrContext,
       defaultLinkOptions
     } = options;
     this.routes = Object.values(routes);
     this.basePath = normalizePath(basePath);
     this.history = history ?? new BrowserHistory();
+    this.context = context;
     this.ssrContext = ssrContext;
     this.defaultLinkOptions = defaultLinkOptions;
     this._ = {
@@ -89,7 +93,11 @@ export class Router {
   preload = async <P extends Pattern>(options: NavigateOptions<P>) => {
     const { to, params = {}, search = {} } = options;
     const { preloads } = this.getRoute(to)._;
-    await Promise.all(preloads.map(preload => preload({ params, search })));
+    await Promise.all(
+      preloads.map(preload =>
+        preload({ params, search, context: this.context })
+      )
+    );
   };
 
   navigate = <P extends Pattern>(
