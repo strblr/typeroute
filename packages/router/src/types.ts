@@ -2,7 +2,11 @@ import type { ComponentType, CSSProperties } from "react";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { Merge } from "type-fest";
 import type { Route } from "./route";
-import type { MaybeKey, OptionalOnUndefined } from "./utils";
+import type {
+  MaybeObjectKey,
+  MaybeUndefinedKey,
+  OptionalOnUndefined
+} from "./utils";
 
 // Register
 
@@ -18,6 +22,10 @@ export type NavigableRoute = Register extends { routes: infer Routes }
 
 export type Handle = Register extends { handle: infer Handle } ? Handle : any;
 
+export type Context = Register extends { context: infer Context }
+  ? Context
+  : undefined;
+
 // Route
 
 export interface Middleware<S extends {} = any> {
@@ -29,7 +37,7 @@ export interface Middleware<S extends {} = any> {
   ) => Middleware<Merge<S, OptionalOnUndefined<S2>>>;
   handle: (handle: Handle) => Middleware<S>;
   preload: (
-    preload: (context: PreloadContext<{}, S>) => Promise<any>
+    preload: (options: PreloadOptions<{}, S>) => Promise<any>
   ) => Middleware<S>;
   component: (component: ComponentType) => Middleware<S>;
   lazy: (loader: ComponentLoader) => Middleware<S>;
@@ -45,20 +53,21 @@ export type Validator<S extends {}, S2 extends {}> =
   | ((search: S & Record<string, unknown>) => S2)
   | StandardSchemaV1<Record<string, unknown>, S2>;
 
-export interface PreloadContext<Ps extends {} = any, S extends {} = any> {
+export interface PreloadOptions<Ps extends {} = any, S extends {} = any> {
   params: Ps;
   search: S;
+  context: Context;
 }
 
 // Router
 
-export interface RouterOptions {
+export type RouterOptions = {
   routes: ReadonlyArray<NavigableRoute> | Record<string, NavigableRoute>;
   basePath?: string;
   history?: HistoryLike;
   ssrContext?: SSRContext;
   defaultLinkOptions?: LinkOptions;
-}
+} & MaybeUndefinedKey<"context", Context>;
 
 export type Pattern = NavigableRoute["_"]["pattern"];
 
@@ -86,8 +95,8 @@ export type NavigateOptions<P extends Pattern> = {
   to: P | GetRoute<P>;
   replace?: boolean;
   state?: any;
-} & MaybeKey<"params", Params<P>> &
-  MaybeKey<"search", Search<P>>;
+} & MaybeObjectKey<"params", Params<P>> &
+  MaybeObjectKey<"search", Search<P>>;
 
 export interface LinkOptions {
   strict?: boolean;

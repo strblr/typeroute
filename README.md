@@ -864,12 +864,12 @@ See [Route preloading](#route-preloading) for ways to load these components befo
 
 # Data preloading
 
-Use `.preload()` to run logic before navigation occurs, typically to prefetch data. Preload functions receive the target route's typed params and search values:
+Use `.preload()` to run logic before navigation occurs, typically to prefetch data. Preload functions receive the target route's typed params, search values, and router context:
 
 ```tsx
 const userProfile = route("/users/:id")
   .search(z.object({ tab: z.enum(["posts", "comments"]).catch("posts") }))
-  .preload(async ({ params, search }) => {
+  .preload(async ({ params, search, context }) => {
     await queryClient.prefetchQuery({
       queryKey: ["user", params.id, search.tab],
       queryFn: () => fetchUser(params.id, search.tab)
@@ -899,6 +899,19 @@ const dashboard = route("/dashboard")
 
 const settings = dashboard.route("/settings").component(Settings);
 // Preloading /dashboard/settings runs prefetchDashboardData
+```
+
+The `context` parameter provides access to any arbitrary data you passed to the router. This is useful for sharing instances like query clients across your preload functions. To use it, pass the context when creating your router and register its type:
+
+```tsx
+<RouterRoot routes={routes} context={{ queryClient }} />;
+
+declare module "@typeroute/router" {
+  interface Register {
+    routes: typeof routes;
+    context: { queryClient: QueryClient };
+  }
+}
 ```
 
 ---
@@ -1536,6 +1549,7 @@ The `Router` class is the core of TypeRoute. You can create an instance directly
 - `router.basePath` - The configured base path
 - `router.routes` - The array of navigable routes
 - `router.history` - The history instance
+- `router.context` - The router context
 - `router.ssrContext` - The SSR context (if provided)
 - `router.defaultLinkOptions` - Default link options
 
@@ -1548,6 +1562,7 @@ The `Router` class is the core of TypeRoute. You can create an instance directly
 const router = new Router({ routes });
 const router = new Router({ routes, basePath: "/app" });
 const router = new Router({ routes, history: new HashHistory() });
+const router = new Router({ routes, context: { queryClient } });
 ```
 
 **`router.navigate(options)`** navigates to a new location.
@@ -1716,13 +1731,13 @@ const risky = route("/risky").error(ErrorPage).component(RiskyPage);
 
 **`.preload(preload)`** registers a preload function for the route.
 
-- `preload` - `(context: PreloadContext) => Promise<any>` - An async function receiving typed `params` and `search`
+- `preload` - `(options: PreloadOptions) => Promise<any>` - An async function receiving typed `params`, `search`, and `context`
 - Returns: `Route` - A new route object
 
 ```tsx
 const user = route("/users/:id")
   .search(z.object({ tab: z.string().catch("profile") }))
-  .preload(async ({ params, search }) => {
+  .preload(async ({ params, search, context }) => {
     // params.id: string, search.tab: string - fully typed
     await prefetchUser(params.id, search.tab);
   });
@@ -1929,13 +1944,14 @@ const unsubscribe = history.subscribe(() => {
 **`RouterOptions`** are options for creating a `Router` instance or passing to `RouterRoot`.
 
 ```tsx
-interface RouterOptions {
+type RouterOptions = {
   routes: Route[] | Record<string, Route>; // Collection of navigable routes
   basePath?: string; // Base path prefix (default: "/")
   history?: HistoryLike; // History implementation (default: BrowserHistory)
+  context?: Context; // Arbitrary router context
   ssrContext?: SSRContext; // Context for server-side rendering
   defaultLinkOptions?: LinkOptions; // Default options for all Link components
-}
+};
 ```
 
 **`NavigateOptions`** are options for type-safe navigation.
@@ -2012,12 +2028,13 @@ type SSRContext = {
 };
 ```
 
-**`PreloadContext`** is the context passed to preload functions.
+**`PreloadOptions`** is the options object passed to preload functions.
 
 ```tsx
-interface PreloadContext {
+interface PreloadOptions {
   params: Params; // Path params for the route
   search: Search; // Validated search params
+  context: Context; // Router context
 }
 ```
 
@@ -2025,7 +2042,6 @@ interface PreloadContext {
 
 # Roadmap
 
-- Possibility to pass an arbitrary context to the Router instance for later use in preloads.
 - Relative path navigation? Not sure it's worth the extra bundle size given that users can export/import route objects and pass them as navigation option.
 - Refactor: APIs like useParams, useSearch and useMatch should accept any route object and not just rely on the global routes collection.
 - Refactor: allow `route()` and `.route()` to be called without passing an argument (defaulting to "/")?
