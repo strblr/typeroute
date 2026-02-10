@@ -1,6 +1,6 @@
 {
   "name": "@typeroute/devtools",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "license": "MIT",
   "author": "strblr",
   "description": "Devtools for @typeroute/router - inspect routes, matches, and navigation state",
