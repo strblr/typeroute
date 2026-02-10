@@ -20,7 +20,9 @@ export type NavigableRoute = Register extends { routes: infer Routes }
     : Route
   : Route;
 
-export type Handle = Register extends { handle: infer Handle } ? Handle : any;
+export type Handle = Register extends { handle: infer Handle }
+  ? Handle
+  : undefined;
 
 export type Context = Register extends { context: infer Context }
   ? Context
