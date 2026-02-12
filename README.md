@@ -136,6 +136,7 @@ If you believe there's a mistake in the comparison table, please [open an issue]
 - [Cookbook](#cookbook)
   - [Quick start example](#quick-start-example)
   - [Server-side rendering (SSR)](#server-side-rendering-ssr)
+  - [Not-found pages](#not-found-pages)
   - [Scroll to top on navigation](#scroll-to-top-on-navigation)
   - [Matching a route anywhere](#matching-a-route-anywhere)
   - [Global link configuration](#global-link-configuration)
@@ -1317,7 +1318,55 @@ import { routes } from "./routes";
 hydrateRoot(rootElement, <RouterRoot routes={routes} />);
 ```
 
-You can also manually set `ssrContext.statusCode` in your components during SSR to control the response status (like 404 for not found pages).
+You can also manually set `ssrContext.statusCode` in your components during SSR to control the response status (like 404 for not-found pages).
+
+## Not-found pages
+
+Since TypeRoute uses a [ranking algorithm](#route-matching-and-ranking) where wildcards have the lowest weight, a catch-all `/*` route naturally acts as a fallback. It only matches when no other route does, regardless of definition order:
+
+```tsx
+const home = route("/").component(HomePage);
+const notFound = route("/*").component(NotFoundPage);
+const about = route("/about").component(AboutPage);
+
+const routes = [home, notFound, about];
+```
+
+```tsx
+function NotFoundPage() {
+  return (
+    <div>
+      <h1>404</h1>
+      <p>This page doesn't exist.</p>
+      <Link to="/">Go home</Link>
+    </div>
+  );
+}
+```
+
+This also works for scoped not-found pages. If you want a fallback specific to a section of your app, attach the catch-all to that section's parent route:
+
+```tsx
+const dashboard = route("/dashboard").component(DashboardLayout);
+
+const overview = dashboard.route("/").component(Overview);
+const settings = dashboard.route("/settings").component(Settings);
+const dashboardNotFound = dashboard.route("/*").component(DashboardNotFound);
+```
+
+Here, `/dashboard/anything-else` renders `DashboardNotFound` inside the dashboard layout.
+
+If you're doing SSR, you can set a 404 status code from the not-found component using `ssrContext`:
+
+```tsx
+function NotFoundPage() {
+  const router = useRouter();
+  if (router.ssrContext) {
+    router.ssrContext.statusCode = 404;
+  }
+  // ...
+}
+```
 
 ## Scroll to top on navigation
 
