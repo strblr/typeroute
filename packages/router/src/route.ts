@@ -10,6 +10,7 @@ import type {
 import {
   normalizePath,
   parsePattern,
+  index,
   suspenseBoundary,
   errorBoundary,
   validator,
@@ -123,6 +124,10 @@ export class Route<
       ...this._,
       components: [...this._.components, memo(component)]
     });
+  };
+
+  index = (component: ComponentType): Route<P, Ps, S> => {
+    return this.component(index(component));
   };
 
   lazy = (loader: ComponentLoader): Route<P, Ps, S> => {

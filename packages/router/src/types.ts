@@ -42,6 +42,7 @@ export interface Middleware<S extends {} = any> {
     preload: (options: PreloadOptions<{}, S>) => Promise<any>
   ) => Middleware<S>;
   component: (component: ComponentType) => Middleware<S>;
+  index: (component: ComponentType) => Middleware<S>;
   lazy: (loader: ComponentLoader) => Middleware<S>;
   suspense: (fallback: ComponentType) => Middleware<S>;
   error: (

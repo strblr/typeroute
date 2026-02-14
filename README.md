@@ -124,6 +124,7 @@ If you believe there's a mistake in the comparison table, please [open an issue]
   - [Route preloading](#route-preloading)
   - [Programmatic navigation](#programmatic-navigation)
   - [Declarative navigation](#declarative-navigation)
+- [Index routes](#index-routes)
 - [Lazy loading](#lazy-loading)
 - [Data preloading](#data-preloading)
 - [Error boundaries](#error-boundaries)
@@ -786,6 +787,42 @@ The `Navigate` component accepts the same navigation props as the `Link` compone
 ```
 
 Note that `Navigate` uses `useLayoutEffect` internally to ensure the navigation is triggered before the browser repaints the screen.
+
+---
+
+# Index routes
+
+Layout routes often need a child route at `"/"` just to show default content at the parent's path:
+
+```tsx
+const dashboard = route("/dashboard").component(DashboardLayout);
+
+const overview = dashboard.route("/").component(Overview);
+const settings = dashboard.route("/settings").component(Settings);
+```
+
+This is perfectly fine, but `.index()` offers a shorthand. It defines what renders when no child route matches, directly on the parent:
+
+```tsx
+const dashboard = route("/dashboard")
+  .component(DashboardLayout)
+  .index(Overview);
+
+const settings = dashboard.route("/settings").component(Settings);
+```
+
+Here's what renders at each path:
+
+```
+/dashboard          → DashboardLayout > Overview
+/dashboard/settings → DashboardLayout > Settings
+```
+
+Under the hood, `.index(Comp)` is equivalent to `.component(() => useOutlet() ?? <Comp />)`. Note that when using `.index()`, the layout route itself becomes navigable. Include it in your routes collection instead of the former child route:
+
+```tsx
+const routes = [dashboard, settings];
+```
 
 ---
 
@@ -1690,6 +1727,17 @@ const dashboard = route("/dashboard").use(auth).component(Dashboard);
 const users = route("/users").component(UsersPage);
 ```
 
+**`.index(component)`** renders a component when no child route matches. See [Index routes](#index-routes).
+
+- `component` - `ComponentType` - A React component
+- Returns: `Route` - A new route object
+
+```tsx
+const dashboard = route("/dashboard")
+  .component(DashboardLayout)
+  .index(Overview);
+```
+
 **`.lazy(loader)`** adds a lazy-loaded component to render when this route matches.
 
 - `loader` - `ComponentLoader` - A function returning a dynamic import promise
@@ -2059,7 +2107,6 @@ interface PreloadOptions {
 - Relative path navigation? Not sure it's worth the extra bundle size given that users can export/import route objects and pass them as navigation option.
 - Refactor: APIs like useParams, useSearch and useMatch should accept any route object and not just rely on the global routes collection.
 - Refactor: allow `route()` and `.route()` to be called without passing an argument (defaulting to "/")?
-- A builder method `.index(component)` to simplify patterns like `useOutlet() ?? <div>Index page</div>`, rendering a component only when no child route matched. In practice, this can spare the definition of a child route for `"/"`.
 - Document usage in test environments
 - Navigation blockers (`useBlocker`, etc.)
 - Open to suggestions, we can discuss them [here](https://github.com/strblr/typeroute/discussions).

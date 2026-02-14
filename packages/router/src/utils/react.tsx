@@ -34,6 +34,10 @@ export function useEvent<F extends (...args: any[]) => any>(fn: F) {
   return useRef(((...args) => ref.current(...args)) as F).current;
 }
 
+export function index(Comp: ComponentType): ComponentType {
+  return () => useOutlet() ?? <Comp />;
+}
+
 export function suspenseBoundary(Comp: ComponentType): ComponentType {
   return () => <Suspense fallback={<Comp />}>{useOutlet()}</Suspense>;
 }
