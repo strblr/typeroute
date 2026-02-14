@@ -107,7 +107,7 @@ If you believe there's a mistake in the comparison table, please [open an issue]
 
 - [Comparison](#comparison)
 - [Installation](#installation)
-- [Showcase](#showcase)
+- [Motivation](#motivation)
 - [Defining routes](#defining-routes)
 - [Nested routes and layouts](#nested-routes-and-layouts)
 - [Setting up the router](#setting-up-the-router)
@@ -166,48 +166,13 @@ TypeRoute requires React 18 or higher.
 
 ---
 
-# Showcase
+# Motivation
 
-Here's what routing looks like with TypeRoute:
+Most React routers today either lack type safety entirely, or achieve it through build plugins and code generation. TypeRoute takes a different path: it uses TypeScript's own inference to give you full autocompletion and type checking - for routes, params, search params, navigation - without any tooling beyond the TypeScript compiler you're already running.
 
-```tsx
-import { route, RouterRoot, Outlet, Link, useParams } from "@typeroute/router";
+The API is deliberately small. You define routes with a builder, register them once through module augmentation, and that's it. Routes nest, middlewares compose, and types inherit down the tree. There's no config file, no CLI, no codegen step. The whole thing ships at ~4kB gzipped before tree-shaking.
 
-// Routes
-const layout = route("/").component(() => (
-  <div>
-    <nav>
-      <Link to="/">Home</Link>
-      <Link to={user} params={{ id: "42" }}>
-        User
-      </Link>
-    </nav>
-    <Outlet />
-  </div>
-));
-
-const home = layout.route("/").component(() => <h1>Home</h1>);
-
-const user = layout.route("/users/:id").component(() => {
-  const { id } = useParams(user); // Fully typed
-  return <h1>User {id}</h1>;
-});
-
-// Setup
-const routes = [home, user];
-
-function App() {
-  return <RouterRoot routes={routes} />;
-}
-
-declare module "@typeroute/router" {
-  interface Register {
-    routes: typeof routes;
-  }
-}
-```
-
-Everything autocompletes and type-checks automatically. No heavy setup, no magic, just a simple API that gets out of your way.
+TypeRoute doesn't try to be a framework. It doesn't own your data fetching, your file structure, or force you into SSR. It handles routing - matching URLs to components and managing navigation - and stays out of the way for everything else.
 
 👉 [Try it live in the StackBlitz playground](https://stackblitz.com/edit/typeroute-demo?file=src%2Fapp.tsx)
 
