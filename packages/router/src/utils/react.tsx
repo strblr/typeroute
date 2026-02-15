@@ -10,7 +10,10 @@ import {
 } from "react";
 import { useOutlet } from "../react";
 
-export function mergeRefs<T>(own: RefObject<T | null>, other?: Ref<T>): Ref<T> {
+export const mergeRefs = <T,>(
+  own: RefObject<T | null>,
+  other?: Ref<T>
+): Ref<T> => {
   if (!other) return own;
   return value => {
     own.current = value;
@@ -24,27 +27,27 @@ export function mergeRefs<T>(own: RefObject<T | null>, other?: Ref<T>): Ref<T> {
       })
     );
   };
-}
+};
 
-export function useEvent<F extends (...args: any[]) => any>(fn: F) {
+export const useEvent = <F extends (...args: any[]) => any>(fn: F) => {
   const ref = useRef(fn);
   useInsertionEffect(() => {
     ref.current = fn;
   }, [fn]);
   return useRef(((...args) => ref.current(...args)) as F).current;
-}
+};
 
-export function index(Comp: ComponentType): ComponentType {
+export const index = (Comp: ComponentType): ComponentType => {
   return () => useOutlet() ?? <Comp />;
-}
+};
 
-export function suspenseBoundary(Comp: ComponentType): ComponentType {
+export const suspenseBoundary = (Comp: ComponentType): ComponentType => {
   return () => <Suspense fallback={<Comp />}>{useOutlet()}</Suspense>;
-}
+};
 
-export function errorBoundary(
+export const errorBoundary = (
   Comp: ComponentType<{ error: unknown }>
-): ComponentType {
+): ComponentType => {
   type Props = { children: ReactNode };
   type State = { children: ReactNode; error?: [unknown] };
 
@@ -72,4 +75,4 @@ export function errorBoundary(
   }
 
   return () => <Catch>{useOutlet()}</Catch>;
-}
+};

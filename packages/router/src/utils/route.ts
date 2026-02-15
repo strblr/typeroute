@@ -2,14 +2,13 @@ import { parse } from "regexparam";
 import type { NormalizePath } from "./types";
 import type { Validator } from "../types";
 
-export function normalizePath<P extends string>(path: P) {
-  const normalized = `/${path}`
+export const normalizePath = <P extends string>(path: P) => {
+  return `/${path}`
     .replaceAll(/\/+/g, "/")
-    .replace(/(.+)\/$/, "$1");
-  return normalized as NormalizePath<P>;
-}
+    .replace(/(.+)\/$/, "$1") as NormalizePath<P>;
+};
 
-export function parsePattern<P extends string>(pattern: P) {
+export const parsePattern = <P extends string>(pattern: P) => {
   const { keys, pattern: regex } = parse(pattern);
   const loose = parse(pattern, true).pattern;
   const weights = pattern
@@ -17,11 +16,11 @@ export function parsePattern<P extends string>(pattern: P) {
     .slice(1)
     .map(s => (s.includes("*") ? 0 : s.includes(":") ? 1 : 2));
   return { pattern, keys, regex, loose, weights };
-}
+};
 
-export function validator<Input extends {}, Output extends {}>(
+export const validator = <Input extends {}, Output extends {}>(
   validate: Validator<Input, Output>
-) {
+) => {
   if (typeof validate === "function") {
     return validate;
   } else {
@@ -38,4 +37,4 @@ export function validator<Input extends {}, Output extends {}>(
       }
     };
   }
-}
+};

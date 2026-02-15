@@ -17,63 +17,63 @@ import type {
 
 // useRouter
 
-export function useRouter() {
+export const useRouter = () => {
   const router = useContext(RouterContext);
   if (router) return router;
   throw new Error("[TypeRoute] useRouter must be within a router context");
-}
+};
 
 // useLocation
 
-export function useLocation() {
+export const useLocation = () => {
   const location = useContext(LocationContext);
   if (location) return location;
   throw new Error("[TypeRoute] useLocation must be within a router context");
-}
+};
 
 // useMatch
 
-export function useMatch<P extends Pattern>(options: MatchOptions<P>) {
+export const useMatch = <P extends Pattern>(options: MatchOptions<P>) => {
   const router = useRouter();
   const { path } = useLocation();
   return useMemo(
     () => router.match(path, options),
     [router, path, options.from, options.strict, options.params]
   );
-}
+};
 
 // useOutlet
 
-export function useOutlet(): ReactNode {
+export const useOutlet = (): ReactNode => {
   return useContext(OutletContext);
-}
+};
 
 // useNavigate
 
-export function useNavigate() {
+export const useNavigate = () => {
   return useRouter().navigate;
-}
+};
 
 // useHandles
 
-export function useHandles(): Handle[] {
+export const useHandles = (): Handle[] => {
   const match = useContext(MatchContext);
   return useMemo(() => match?.route._.handles ?? [], [match]);
-}
+};
 
 // useParams
 
-export function useParams<P extends Pattern>(from: P | GetRoute<P>) {
+export const useParams = <P extends Pattern>(from: P | GetRoute<P>) => {
   const match = useMatch({ from });
   if (match) return match.params;
   throw new Error(
     `[TypeRoute] Can't read params for non-matching route ${from}`
   );
-}
+};
 
 // useSearch
 
-export function useSearch<P extends Pattern>(from: P | GetRoute<P>) {
+export const useSearch = <P extends Pattern>(from: P | GetRoute<P>) => {
   const router = useRouter();
   const { search, path } = useLocation();
   const route = router.getRoute(from);
@@ -92,4 +92,4 @@ export function useSearch<P extends Pattern>(from: P | GetRoute<P>) {
   );
 
   return [validated, setSearch] as const;
-}
+};

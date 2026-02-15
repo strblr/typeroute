@@ -34,7 +34,7 @@ import type {
 
 export type RouterRootProps = RouterOptions | { router: Router };
 
-export function RouterRoot(props: RouterRootProps) {
+export const RouterRoot = (props: RouterRootProps) => {
   const [router] = useState(() =>
     "router" in props ? props.router : new Router(props)
   );
@@ -66,26 +66,26 @@ export function RouterRoot(props: RouterRootProps) {
     ),
     [router, location, match]
   );
-}
+};
 
 // Outlet
 
-export function Outlet() {
+export const Outlet = () => {
   return useOutlet();
-}
+};
 
 // Navigate
 
 export type NavigateProps<P extends Pattern> = NavigateOptions<P>;
 
-export function Navigate<P extends Pattern>(props: NavigateProps<P>) {
+export const Navigate = <P extends Pattern>(props: NavigateProps<P>) => {
   const router = useRouter();
   useLayoutEffect(() => router.navigate(props), []);
   if (router.ssrContext) {
     router.ssrContext.redirect = router.createUrl(props);
   }
   return null;
-}
+};
 
 // Link
 
@@ -94,7 +94,7 @@ export type LinkProps<P extends Pattern> = NavigateOptions<P> &
   AnchorHTMLAttributes<HTMLAnchorElement> &
   RefAttributes<HTMLAnchorElement> & { asChild?: boolean };
 
-export function Link<P extends Pattern>(props: LinkProps<P>): ReactNode {
+export const Link = <P extends Pattern>(props: LinkProps<P>): ReactNode => {
   const router = useRouter();
   const {
     to,
@@ -130,14 +130,6 @@ export function Link<P extends Pattern>(props: LinkProps<P>): ReactNode {
     cancelPreload();
     timeoutRef.current = setTimeout(() => router.preload(props), preloadDelay);
   });
-
-  const activeProps = {
-    ["data-active"]: active,
-    style: { ...style, ...(active && activeStyle) },
-    className:
-      [className, active && activeClassName].filter(Boolean).join(" ") ||
-      undefined
-  };
 
   useEffect(() => {
     if (preload === "render") {
@@ -185,14 +177,18 @@ export function Link<P extends Pattern>(props: LinkProps<P>): ReactNode {
 
   const anchorProps = {
     ...rest,
-    ...activeProps,
     ref: mergeRefs(ref, rest.ref),
     href: url,
     onClick,
     onFocus: intentEvent(schedulePreload, rest.onFocus),
     onBlur: intentEvent(cancelPreload, rest.onBlur),
     onPointerEnter: intentEvent(schedulePreload, rest.onPointerEnter),
-    onPointerLeave: intentEvent(cancelPreload, rest.onPointerLeave)
+    onPointerLeave: intentEvent(cancelPreload, rest.onPointerLeave),
+    ["data-active"]: active,
+    style: { ...style, ...(active && activeStyle) },
+    className:
+      [className, active && activeClassName].filter(Boolean).join(" ") ||
+      undefined
   };
 
   return asChild && isValidElement(children) ? (
@@ -200,4 +196,4 @@ export function Link<P extends Pattern>(props: LinkProps<P>): ReactNode {
   ) : (
     <a {...anchorProps}>{children}</a>
   );
-}
+};

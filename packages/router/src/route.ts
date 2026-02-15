@@ -19,9 +19,9 @@ import {
   type OptionalOnUndefined
 } from "./utils";
 
-export function route<P extends string>(
+export const route = <P extends string>(
   pattern: P
-): Route<NormalizePath<P>, ParsePattern<NormalizePath<P>>, {}> {
+): Route<NormalizePath<P>, ParsePattern<NormalizePath<P>>, {}> => {
   return new Route({
     ...parsePattern(normalizePath(pattern)),
     validate: search => search,
@@ -29,11 +29,11 @@ export function route<P extends string>(
     components: [],
     preloads: []
   });
-}
+};
 
-export function middleware(): Middleware<{}> {
+export const middleware = (): Middleware<{}> => {
   return route("");
-}
+};
 
 export class Route<
   P extends string = string,
