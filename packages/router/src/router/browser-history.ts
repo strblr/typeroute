@@ -6,7 +6,7 @@ import type {
 } from "../types";
 
 export class BrowserHistory implements HistoryLike {
-  private _?: [search: string, location: HistoryLocation];
+  private declare _?: [search: string, location: HistoryLocation];
 
   protected _loc = (path: string, search: string) => {
     const { state } = history;
@@ -39,9 +39,9 @@ export class BrowserHistory implements HistoryLike {
   };
 
   subscribe = (listener: () => void) => {
-    events.forEach(event => window.addEventListener(event, listener));
+    events.forEach(event => addEventListener(event, listener));
     return () => {
-      events.forEach(event => window.removeEventListener(event, listener));
+      events.forEach(event => removeEventListener(event, listener));
     };
   };
 }

@@ -189,12 +189,10 @@ function SimplePage() {
 const lazyPage = layout
   .route("/lazy")
   .handle({ breadcrumb: "Lazy" })
-  .lazy(() =>
-    import("./lazy").then(async m => {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return m.default;
-    })
-  );
+  .lazy(async () => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return import("./lazy");
+  });
 
 const lazySection1 = lazyPage
   .route("/section1")

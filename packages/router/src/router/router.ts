@@ -24,13 +24,13 @@ import type {
 } from "../types";
 
 export class Router {
-  readonly routes: ReadonlyArray<NavigableRoute>;
-  readonly basePath: string;
-  readonly history: HistoryLike;
-  readonly context: Context;
-  readonly ssrContext?: SSRContext;
-  readonly defaultLinkOptions?: LinkOptions;
-  private readonly _: { routeMap: Map<string, Route> };
+  declare readonly routes: ReadonlyArray<NavigableRoute>;
+  declare readonly basePath: string;
+  declare readonly history: HistoryLike;
+  declare readonly context: Context;
+  declare readonly ssrContext?: SSRContext;
+  declare readonly defaultLinkOptions?: LinkOptions;
+  private declare readonly _: Map<string, Route>;
 
   constructor(options: RouterOptions) {
     const {
@@ -47,16 +47,14 @@ export class Router {
     this.context = context;
     this.ssrContext = ssrContext;
     this.defaultLinkOptions = defaultLinkOptions;
-    this._ = {
-      routeMap: new Map(this.routes.map(route => [route._.pattern, route]))
-    };
+    this._ = new Map(this.routes.map(route => [route._.pattern, route]));
   }
 
   getRoute = <P extends Pattern>(pattern: P | GetRoute<P>) => {
     if (typeof pattern !== "string") {
       return pattern;
     }
-    const route = this._.routeMap.get(pattern);
+    const route = this._.get(pattern);
     if (!route) {
       throw new Error(`[TypeRoute] Route not found for ${pattern}`);
     }

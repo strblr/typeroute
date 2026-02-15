@@ -2,7 +2,6 @@ import {
   useRef,
   useState,
   useMemo,
-  useCallback,
   useLayoutEffect,
   useEffect,
   useSyncExternalStore,
@@ -122,26 +121,23 @@ export function Link<P extends Pattern>(props: LinkProps<P>): ReactNode {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const url = router.createUrl(props);
   const active = !!useMatch({ from: to, strict, params });
-  const preloadRoute = useEvent(() => router.preload(props));
 
-  const cancelPreload = useCallback(() => {
+  const cancelPreload = useEvent(() => {
     clearTimeout(timeoutRef.current!);
-  }, []);
+  });
 
-  const schedulePreload = useCallback(() => {
+  const schedulePreload = useEvent(() => {
     cancelPreload();
-    timeoutRef.current = setTimeout(preloadRoute, preloadDelay);
-  }, [preloadDelay, cancelPreload]);
+    timeoutRef.current = setTimeout(() => router.preload(props), preloadDelay);
+  });
 
-  const activeProps = useMemo(() => {
-    return {
-      ["data-active"]: active,
-      style: { ...style, ...(active && activeStyle) },
-      className:
-        [className, active && activeClassName].filter(Boolean).join(" ") ||
-        undefined
-    };
-  }, [active, style, className, activeStyle, activeClassName]);
+  const activeProps = {
+    ["data-active"]: active,
+    style: { ...style, ...(active && activeStyle) },
+    className:
+      [className, active && activeClassName].filter(Boolean).join(" ") ||
+      undefined
+  };
 
   useEffect(() => {
     if (preload === "render") {
@@ -163,7 +159,7 @@ export function Link<P extends Pattern>(props: LinkProps<P>): ReactNode {
       };
     }
     return cancelPreload;
-  }, [preload, schedulePreload, cancelPreload]);
+  }, [preload]);
 
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
     rest.onClick?.(event);
@@ -172,7 +168,7 @@ export function Link<P extends Pattern>(props: LinkProps<P>): ReactNode {
       event.metaKey ||
       event.shiftKey ||
       event.altKey ||
-      event.button !== 0 ||
+      event.button ||
       event.defaultPrevented
     )
       return;

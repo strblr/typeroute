@@ -41,7 +41,7 @@ export class Route<
   S extends {} = any
 > implements Middleware<S>
 {
-  readonly _: {
+  declare readonly _: {
     pattern: P;
     keys: string[];
     regex: RegExp;
@@ -54,7 +54,7 @@ export class Route<
     p?: Route;
   };
 
-  readonly _types!: {
+  declare readonly _types: {
     params: Ps;
     search: S;
   };
@@ -131,11 +131,9 @@ export class Route<
   };
 
   lazy = (loader: ComponentLoader): Route<P, Ps, S> => {
-    const component = lazy(async () => {
-      const result = await loader();
-      return "default" in result ? result : { default: result };
-    });
-    return this.preload(loader).component(component);
+    return this.preload(loader).component(
+      lazy(() => loader().then(m => ("default" in m ? m : { default: m })))
+    );
   };
 
   suspense = (fallback: ComponentType): Route<P, Ps, S> => {

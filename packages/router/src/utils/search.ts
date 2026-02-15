@@ -6,13 +6,11 @@ export function stringifySearch(search: Record<string, unknown>) {
 }
 
 export function parseSearch(search: string): Record<string, unknown> {
-  const urlSearch = new URLSearchParams(search);
-  return Object.fromEntries(
-    [...urlSearch.entries()].map(([key, value]) => {
-      value = decodeURIComponent(value);
-      return [key, isJSONString(value) ? JSON.parse(value) : value];
-    })
-  );
+  const out: Record<string, unknown> = {};
+  new URLSearchParams(search).forEach((value, key) => {
+    out[key] = isJSONString(value) ? JSON.parse(value) : value;
+  });
+  return out;
 }
 
 function toValueString(value: unknown) {
