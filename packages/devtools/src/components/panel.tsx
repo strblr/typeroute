@@ -214,7 +214,7 @@ function DetailsSection({ currentMatch, selectedRoute }: DetailsSectionProps) {
             </div>
             <InfoSection label="Pattern meta" defaultExpanded={false}>
               <Inspector
-                value={{ keys: route._.keys, weights: route._.weights }}
+                value={{ keys: route._.keys, weight: route._.weight }}
               />
             </InfoSection>
             <div style={styles.infoRow()}>

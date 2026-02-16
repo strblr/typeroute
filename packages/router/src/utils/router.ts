@@ -1,7 +1,6 @@
 import { normalizePath } from "./route";
 import { parseSearch, stringifySearch } from "./search";
 import type { Route } from "../route";
-import type { Match } from "../types";
 
 export const absolutePath = (rpath: string, basePath: string) => {
   return normalizePath(`${basePath}/${rpath}`);
@@ -37,20 +36,4 @@ export const match = (
     match && (out[key] = match);
   });
   return out;
-};
-
-export const rankMatches = (matches: Match[]) => {
-  return [...matches].sort((a, b) => {
-    const was = a.route._.weights;
-    const wbs = b.route._.weights;
-    const length = Math.max(was.length, wbs.length);
-    for (let i = 0; i < length; i++) {
-      const wa = was[i] ?? -1;
-      const wb = wbs[i] ?? -1;
-      if (wa !== wb) {
-        return wb - wa;
-      }
-    }
-    return 0;
-  });
 };

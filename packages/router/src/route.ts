@@ -46,7 +46,7 @@ export class Route<
     keys: string[];
     regex: RegExp;
     loose: RegExp;
-    weights: number[];
+    weight: string;
     validate: (search: Record<string, unknown>) => S;
     handles: Handle[];
     components: ComponentType[];
