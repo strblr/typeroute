@@ -1,13 +1,7 @@
 import { inject } from "regexparam";
 import { BrowserHistory } from "./browser-history";
 import type { Route } from "../route";
-import {
-  normalizePath,
-  mergeUrl,
-  match,
-  rankMatches,
-  absolutePath
-} from "../utils";
+import { normalizePath, mergeUrl, match, absolutePath } from "../utils";
 import type {
   NavigableRoute,
   RouterOptions,
@@ -75,10 +69,13 @@ export class Router {
   };
 
   matchAll = (path: string): Match | null => {
-    const matches = this.routes
-      .map(route => this.match(path, { from: route, strict: true }))
-      .filter(m => !!m);
-    return rankMatches(matches)[0] ?? null;
+    return (
+      this.routes
+        .map(route => this.match(path, { from: route, strict: true }))
+        .filter(m => !!m)
+        .sort((a, b) => b.route._.weight.localeCompare(a.route._.weight))[0] ??
+      null
+    );
   };
 
   createUrl = <P extends Pattern>(options: NavigateOptions<P>) => {
