@@ -40,17 +40,7 @@ export const match = (
 };
 
 export const rankMatches = (matches: Match[]) => {
-  return [...matches].sort((a, b) => {
-    const was = a.route._.weights;
-    const wbs = b.route._.weights;
-    const length = Math.max(was.length, wbs.length);
-    for (let i = 0; i < length; i++) {
-      const wa = was[i] ?? -1;
-      const wb = wbs[i] ?? -1;
-      if (wa !== wb) {
-        return wb - wa;
-      }
-    }
-    return 0;
-  });
+  return [...matches].sort((a, b) =>
+    b.route._.weight.localeCompare(a.route._.weight)
+  );
 };
