@@ -169,9 +169,9 @@ TypeRoute requires React 18 or higher.
 
 # Motivation
 
-Most React routers today either lack type safety entirely, or achieve it through build plugins and code generation. TypeRoute takes a different path: it uses TypeScript's own inference to give you full autocompletion and type checking - for routes, params, search params, navigation - without any tooling beyond the TypeScript compiler you're already running.
+Most React routers today either lack type safety entirely, or achieve it through build plugins and code generation. TypeRoute takes a different path: it gives you full autocompletion and type checking - for routes, params, search params, navigation - without any tooling beyond the TypeScript compiler you're already running.
 
-The API is deliberately small. You define routes with a builder, register them once through module augmentation, and that's it. Routes nest, middlewares compose, and types inherit down the tree. There's no config file, no CLI, no codegen step. The whole thing ships at ~4kB gzipped before tree-shaking.
+The API is deliberately small. You define routes with a builder, register them once through module augmentation, and that's it. Routes nest and types inherit down the tree. There's no config file, no CLI, no codegen step. The whole thing ships at ~4kB gzipped before tree-shaking.
 
 TypeRoute doesn't try to be a framework. It doesn't own your data fetching, your file structure, or force you into SSR. It handles routing - matching URLs to components and managing navigation - and stays out of the way for everything else.
 
@@ -215,19 +215,19 @@ Route building is immutable: every method on a route returns a new route instanc
 
 # Nested routes and layouts
 
-Any route can have child routes. Call `.route()` on an existing route to create one:
+Any route can have child routes:
 
 ```tsx
 const dashboard = route("/dashboard").component(DashboardLayout);
 
-const overview = dashboard.route("/").component(Overview);
+const overview = dashboard.component(Overview);
 const settings = dashboard.route("/settings").component(Settings);
 const profile = dashboard.route("/profile").component(Profile);
 ```
 
-Child routes build on their parent's path. So `overview` matches `/dashboard`, `settings` matches `/dashboard/settings`, and `profile` matches `/dashboard/profile`.
+`.route()` extends the path: `settings` matches `/dashboard/settings` and `profile` matches `/dashboard/profile`. Chaining `.component()` directly (like `overview`) doesn't change the path, so `overview` matches `/dashboard`.
 
-They also nest inside the parent's component. The parent renders an `<Outlet />` to mark where child routes should appears:
+All of them nest inside `dashboard`'s component. The parent renders an `<Outlet />` to mark where child routes should appear:
 
 ```tsx
 function DashboardLayout() {
@@ -273,11 +273,11 @@ Beyond paths and components, child routes also inherit search param validators, 
 Before setting up the router, you need to collect your navigable routes into a collection (either array or record). When building nested route hierarchies, you'll often create intermediate parent routes solely for grouping and shared layouts. These intermediate routes shouldn't be included in your routes collection - only the final, navigable routes should be:
 
 ```tsx
-// Intermediate route used for hierarchy
+// Intermediate route used for shared layout
 const layout = route("/").component(Layout);
 
 // Navigable routes that users can actually visit
-const home = layout.route("/").component(Home);
+const home = layout.component(Home);
 const about = layout.route("/about").component(About);
 
 // Collect only the navigable routes
@@ -287,7 +287,7 @@ const routes = [home, about]; // ✅ Don't include `layout`
 const routes = { home, about };
 ```
 
-This makes sure that only actual pages can be matched and appear in autocomplete. The intermediate routes still exist as part of the hierarchy, they just aren't directly navigable. Note that the order of routes in the collection doesn't matter - TypeRoute uses a [ranking algorithm](#route-matching-and-ranking) to pick the most specific match.
+This makes sure that only actual pages can be matched and appear in autocomplete. The intermediate routes still exist as part of the build chain, they just aren't directly navigable. Note that the order of routes in the collection doesn't matter - TypeRoute uses a [ranking algorithm](#route-matching-and-ranking) to pick the most specific match.
 
 The `RouterRoot` component is the entry point to TypeRoute. It listens to URL changes, matches the current path against your routes, and renders the matching route's component hierarchy.
 
@@ -792,16 +792,22 @@ Note that `Navigate` uses `useLayoutEffect` internally to ensure the navigation 
 
 # Index routes
 
-Layout routes often need a child route at `"/"` just to show default content at the parent's path:
+When you have a layout route, you often want content at the layout's path when no child route matches. Since `.component()` doesn't change the path, you create an index route by chaining directly on the layout:
 
 ```tsx
 const dashboard = route("/dashboard").component(DashboardLayout);
 
-const overview = dashboard.route("/").component(Overview);
+const overview = dashboard.component(Overview);
 const settings = dashboard.route("/settings").component(Settings);
 ```
 
-This is perfectly fine, but `.index()` offers a shorthand. It defines what renders when no child route matches, directly on the parent:
+Here, `overview` matches `/dashboard` and renders `DashboardLayout > Overview`. Only `overview` and `settings` go in the routes collection - `dashboard` is just an intermediate used for building:
+
+```tsx
+const routes = [overview, settings];
+```
+
+`.index()` offers an alternative that combines the layout and the index content into a single navigable route:
 
 ```tsx
 const dashboard = route("/dashboard")
@@ -811,14 +817,7 @@ const dashboard = route("/dashboard")
 const settings = dashboard.route("/settings").component(Settings);
 ```
 
-Here's what renders at each path:
-
-```
-/dashboard          → DashboardLayout > Overview
-/dashboard/settings → DashboardLayout > Settings
-```
-
-Under the hood, `.index(Comp)` is equivalent to `.component(() => useOutlet() ?? <Comp />)`. Note that when using `.index()`, the layout route itself becomes navigable. Include it in your routes collection instead of the former child route:
+Under the hood, `.index(Comp)` is equivalent to `.component(() => useOutlet() ?? <Comp />)`. It renders `Overview` when no child route matches, and the child's outlet when one does. Since the layout route is now navigable, include it in your routes collection:
 
 ```tsx
 const routes = [dashboard, settings];
@@ -1264,7 +1263,7 @@ function AppLayout() {
 }
 
 // Page routes
-const home = app.route("/").component(() => <h1>Welcome home</h1>);
+const home = app.component(() => <h1>Welcome home</h1>);
 const about = app.route("/about").component(() => <h1>About us</h1>);
 
 // Router setup
@@ -1351,7 +1350,7 @@ This also works for scoped not-found pages. If you want a fallback specific to a
 ```tsx
 const dashboard = route("/dashboard").component(DashboardLayout);
 
-const overview = dashboard.route("/").component(Overview);
+const overview = dashboard.component(Overview);
 const settings = dashboard.route("/settings").component(Settings);
 const dashboardNotFound = dashboard.route("/*").component(DashboardNotFound);
 ```
@@ -1536,7 +1535,7 @@ Use [route handles](#route-handles) to define page titles and update the browser
 
 ```tsx
 const layout = route("/").handle({ title: "App" }).component(Layout);
-const home = layout.route("/").handle({ title: "Home" }).component(HomePage);
+const home = layout.handle({ title: "Home" }).component(HomePage);
 const settings = layout
   .route("/settings")
   .handle({ title: "Settings" })
