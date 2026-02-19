@@ -11,10 +11,9 @@ interface RouteTreeProps {
 }
 
 interface RouteNode {
-  key: string;
-  route: Route;
+  pattern: string;
+  route: Route | null;
   children: RouteNode[];
-  navigable: boolean;
 }
 
 export function RouteTree({
@@ -23,62 +22,20 @@ export function RouteTree({
   selectedRoute,
   onSelectRoute
 }: RouteTreeProps) {
-  const activeSet = useMemo(
-    () =>
-      !currentMatch
-        ? new Set<Route>()
-        : new Set<Route>(getChain(currentMatch.route)),
-    [currentMatch]
-  );
-
-  const tree = useMemo(() => {
-    const navigableSet = new Set<Route>(routes);
-    const nodeMap = new Map<Route, RouteNode>();
-    const roots: RouteNode[] = [];
-
-    for (let i = 0; i < routes.length; i++) {
-      const route = routes[i];
-      const chain = getChain(route);
-      for (let j = 0; j < chain.length; j++) {
-        const r = chain[j];
-        let node = nodeMap.get(r);
-        if (!node) {
-          node = {
-            key: `${i}-${j}`,
-            route: r,
-            children: [],
-            navigable: navigableSet.has(r)
-          };
-          nodeMap.set(r, node);
-        }
-        if (j === 0) {
-          if (!roots.includes(node)) {
-            roots.push(node);
-          }
-        } else {
-          const parent = nodeMap.get(chain[j - 1])!;
-          if (!parent.children.includes(node)) {
-            parent.children.push(node);
-          }
-        }
-      }
-    }
-
-    const sort = (nodes: RouteNode[]) => {
-      nodes.sort((a, b) => a.route._.pattern.localeCompare(b.route._.pattern));
-      nodes.forEach(n => sort(n.children));
-    };
-    sort(roots);
-
-    return roots;
-  }, [routes]);
+  const tree = useMemo(() => buildTree(routes), [routes]);
+  const activeSet = useMemo(() => {
+    if (!currentMatch) return new Set<Route>();
+    const matched = currentMatch.route._.pattern;
+    return new Set(routes.filter(r => isPathPrefix(r._.pattern, matched)));
+  }, [currentMatch, routes]);
 
   return (
     <div>
       {tree.map(node => (
         <RouteTreeNode
-          key={node.key}
+          key={node.pattern}
           node={node}
+          parentPattern={null}
           depth={0}
           activeRoute={currentMatch?.route}
           activeSet={activeSet}
@@ -92,6 +49,7 @@ export function RouteTree({
 
 interface RouteTreeNodeProps {
   node: RouteNode;
+  parentPattern: string | null;
   depth: number;
   activeRoute?: Route;
   activeSet: Set<Route>;
@@ -101,6 +59,7 @@ interface RouteTreeNodeProps {
 
 function RouteTreeNode({
   node,
+  parentPattern,
   activeRoute,
   activeSet,
   depth,
@@ -108,17 +67,17 @@ function RouteTreeNode({
   onSelect
 }: RouteTreeNodeProps) {
   const [expanded, setExpanded] = useState(true);
-  const pattern = useMemo(() => formatPattern(node.route), [node.route]);
-  const active = activeSet.has(node.route);
   const hasChildren = node.children.length > 0;
-  const selected = selectedRoute === node.route;
-  const leafActive = activeRoute === node.route;
+  const active = node.route
+    ? activeSet.has(node.route)
+    : !!activeRoute && isPathPrefix(node.pattern, activeRoute._.pattern);
+  const selected = !!node.route && selectedRoute === node.route;
+  const leafActive = !!node.route && activeRoute === node.route;
   const status = leafActive ? "active" : active ? "matched" : "inactive";
-  const label = !node.navigable
+  const pattern = relativePattern(node.pattern, parentPattern);
+  const label = !node.route
     ? "layout"
-    : pattern === "/"
-    ? "index"
-    : pattern === "*"
+    : pattern.includes("*")
     ? "catch-all"
     : null;
 
@@ -131,7 +90,9 @@ function RouteTreeNode({
       <div
         role="button"
         tabIndex={0}
-        onClick={() => onSelect(node.route)}
+        onClick={() =>
+          node.route ? onSelect(node.route) : setExpanded(!expanded)
+        }
         style={styles.routeTreeItem({ selected, active: leafActive, depth })}
       >
         <button
@@ -146,7 +107,7 @@ function RouteTreeNode({
           {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         </button>
         <span style={styles.routeIndicator(status)} />
-        <code style={styles.routeTreePattern(node.navigable)}>
+        <code style={styles.routeTreePattern(!!node.route)}>
           {pattern}
           {label && <span style={styles.routeTreeLabel}>({label})</span>}
         </code>
@@ -154,8 +115,9 @@ function RouteTreeNode({
       {expanded &&
         node.children.map(child => (
           <RouteTreeNode
-            key={child.key}
+            key={child.pattern}
             node={child}
+            parentPattern={node.pattern}
             depth={depth + 1}
             activeRoute={activeRoute}
             activeSet={activeSet}
@@ -167,19 +129,66 @@ function RouteTreeNode({
   );
 }
 
-function getChain(route: Route): Route[] {
-  const parent = route._.p;
-  return !parent ? [route] : [...getChain(parent), route];
+function isPathPrefix(prefix: string, path: string): boolean {
+  return (
+    prefix === path || path.startsWith(prefix === "/" ? "/" : prefix + "/")
+  );
 }
 
-function formatPattern(route: Route) {
-  let pattern = route._.pattern;
-  if (pattern === "/") return "/";
-  const parent = route._.p;
-  if (parent) {
-    const parentPattern = parent._.pattern;
-    pattern = pattern.substring(parentPattern.length);
+function relativePattern(pattern: string, parent: string | null): string {
+  if (!parent) return pattern;
+  return pattern.substring(parent === "/" ? 1 : parent.length + 1) || "/";
+}
+
+function buildTree(routes: ReadonlyArray<Route>): RouteNode[] {
+  const routeByPattern = new Map(routes.map(r => [r._.pattern, r]));
+  const nodeByPattern = new Map<string, RouteNode>();
+
+  for (const route of routes) {
+    for (const prefix of prefixPatterns(route._.pattern)) {
+      if (!nodeByPattern.has(prefix)) {
+        nodeByPattern.set(prefix, {
+          pattern: prefix,
+          route: routeByPattern.get(prefix) ?? null,
+          children: []
+        });
+      }
+    }
   }
-  if (pattern.startsWith("/")) pattern = pattern.substring(1);
-  return pattern;
+
+  const roots: RouteNode[] = [];
+  for (const [pattern, node] of nodeByPattern) {
+    const parentKey =
+      pattern === "/"
+        ? null
+        : pattern.substring(0, pattern.lastIndexOf("/")) || "/";
+    const parent = parentKey ? nodeByPattern.get(parentKey) : undefined;
+    if (parent) parent.children.push(node);
+    else roots.push(node);
+  }
+
+  const sort = (nodes: RouteNode[]) => {
+    nodes.sort((a, b) => a.pattern.localeCompare(b.pattern));
+    nodes.forEach(n => sort(n.children));
+  };
+  sort(roots);
+
+  return compress(roots);
+}
+
+function prefixPatterns(pattern: string): string[] {
+  if (pattern === "/") return ["/"];
+  const segments = pattern.split("/").filter(Boolean);
+  const result = ["/"];
+  for (let i = 0; i < segments.length; i++) {
+    result.push("/" + segments.slice(0, i + 1).join("/"));
+  }
+  return result;
+}
+
+function compress(nodes: RouteNode[]): RouteNode[] {
+  return nodes.flatMap(node => {
+    node.children = compress(node.children);
+    return !node.route && node.children.length === 1 ? node.children : [node];
+  });
 }

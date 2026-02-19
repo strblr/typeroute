@@ -104,6 +104,7 @@ function Layout() {
         >
           Preloader
         </Link>
+        <Link to={settingsProfile}>Settings</Link>
         <Link to="/param/:id" params={{ id: "1" }}>
           Param 1
         </Link>
@@ -153,15 +154,12 @@ function PageTitle() {
 
 // Index
 
-const index = layout
-  .route("/")
-  .handle({ breadcrumb: "Index" })
-  .component(Index);
+const index = layout.handle({ breadcrumb: "Index" }).component(Index);
 
 function Index() {
   return (
     <div className="section">
-      <h1 className="section-title">Index</h1>
+      <h1 className="section-title">Index page</h1>
     </div>
   );
 }
@@ -377,6 +375,46 @@ function PreloaderDemo() {
   );
 }
 
+// Settings (non-navigable layout)
+
+const settingsLayout = layout
+  .route("/settings")
+  .handle({ breadcrumb: "Settings" })
+  .component(SettingsLayout);
+
+const settingsProfile = settingsLayout
+  .route("/profile")
+  .handle({ breadcrumb: "Profile" })
+  .component(SettingsProfile);
+
+const settingsAccount = settingsLayout
+  .route("/account")
+  .handle({ breadcrumb: "Account" })
+  .component(SettingsAccount);
+
+function SettingsLayout() {
+  return (
+    <div className="section">
+      <h1 className="section-title">Settings</h1>
+      <nav className="nav">
+        <Link to={settingsProfile}>Profile</Link>
+        <Link to={settingsAccount}>Account</Link>
+      </nav>
+      <div className="section-content">
+        <Outlet />
+      </div>
+    </div>
+  );
+}
+
+function SettingsProfile() {
+  return <div className="data-display">Profile settings</div>;
+}
+
+function SettingsAccount() {
+  return <div className="data-display">Account settings</div>;
+}
+
 // Wildcard
 
 const wildcard = layout
@@ -409,7 +447,9 @@ const routes = {
   index,
   faulty,
   lazySection2,
-  lazySection1
+  lazySection1,
+  settingsProfile,
+  settingsAccount
 };
 
 const logMiddleware = (history: HistoryLike) => {

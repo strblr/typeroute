@@ -51,7 +51,6 @@ export class Route<
     handles: Handle[];
     components: ComponentType[];
     preloads: ((options: PreloadOptions) => Promise<any>)[];
-    p?: Route;
   };
 
   declare readonly _types: {
@@ -72,8 +71,7 @@ export class Route<
   > => {
     return new Route({
       ...this._,
-      ...parsePattern(normalizePath(`${this._.pattern}/${pattern}`)),
-      p: this
+      ...parsePattern(normalizePath(`${this._.pattern}/${pattern}`))
     });
   };
 
