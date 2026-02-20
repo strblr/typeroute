@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  A type-safe router for React that just works.
+  Type-safe React routing. No codegen. No build plugins. Just TypeScript.
 </p>
 
 <div align="center">
@@ -325,7 +325,7 @@ function App() {
 }
 ```
 
-For full type safety across your app, register your routes using TypeScript's module augmentation. This is a required step for proper autocompletion and type checking:
+Finally, register your routes using TypeScript's module augmentation. **This is what powers TypeRoute's type safety** - once registered, every API (`Link`, `navigate`, `useParams`, `useSearch`, etc.) knows exactly which routes exist and what params they expect:
 
 ```tsx
 declare module "@typeroute/router" {
@@ -334,8 +334,6 @@ declare module "@typeroute/router" {
   }
 }
 ```
-
-With this in place, `Link`, `navigate`, `useParams`, `useSearch`, and other APIs will know exactly which routes exist and what input they expect.
 
 **You're all set up!**
 
@@ -347,26 +345,24 @@ There's no prescribed way to organize your routing code. Since TypeRoute isn't f
 
 That said, here's a pattern that tends to work well: define each route and its component in the same file, then export the route. This keeps everything related to that page in one place:
 
+<!-- prettier-ignore -->
 ```tsx
 // pages/home.tsx
 import { route } from "@typeroute/router";
 
-export const home = route("/").component(Home);
-
-function Home() {
-  return <div>Home page</div>;
-}
+export const home = route("/").component(() => (
+  <div>Home page</div>
+));
 ```
 
+<!-- prettier-ignore -->
 ```tsx
 // pages/about.tsx
 import { route } from "@typeroute/router";
 
-export const about = route("/about").component(About);
-
-function About() {
-  return <div>About page</div>;
-}
+export const about = route("/about").component(() => (
+  <div>About page</div>
+));
 ```
 
 Then add a file that re-exports all your routes:
@@ -2103,12 +2099,12 @@ interface PreloadOptions {
 
 # Roadmap
 
-- Relative path navigation? Not sure it's worth the extra bundle size given that users can export/import route objects and pass them as navigation option.
-- Refactor: APIs like useParams, useSearch and useMatch should accept any route object and not just rely on the global routes collection.
-- Refactor: allow `route()` and `.route()` to be called without passing an argument (defaulting to "/")?
-- Document usage in test environments
 - Navigation blockers (`useBlocker`, etc.)
-- Open to suggestions, we can discuss them [here](https://github.com/strblr/typeroute/discussions).
+- Accept any route object in `useParams`, `useSearch`, and `useMatch` (not just globally registered routes)
+- Allow `route()` and `.route()` to be called without arguments (defaulting to `"/"`)
+- Relative path navigation
+- Test environment documentation
+- Open to suggestions - discuss them [here](https://github.com/strblr/typeroute/discussions).
 
 ---
 
