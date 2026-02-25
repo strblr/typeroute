@@ -824,7 +824,7 @@ const dashboard = route("/dashboard")
 const settings = dashboard.route("/settings").component(Settings);
 ```
 
-Under the hood, `.index(Comp)` is equivalent to `.component(() => useOutlet() ?? <Comp />)`. It renders `Overview` when no outlet content is available, and renders the outlet content otherwise. Since the layout route is now navigable, include it in your routes collection:
+Under the hood, `.index(Overview)` is equivalent to `.component(() => useOutlet() ?? <Overview />)`. It renders `Overview` when no outlet content is available, and renders the outlet content otherwise. Since the layout route is now navigable, include it in your routes collection:
 
 ```tsx
 const routes = [dashboard, settings];
