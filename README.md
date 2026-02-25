@@ -173,7 +173,7 @@ TypeRoute requires React 18 or higher.
 
 Most React routers today either lack type safety entirely, or achieve it through build plugins and code generation. TypeRoute takes a different path: it gives you full autocompletion and type checking - for routes, params, search params, navigation - without any tooling beyond the TypeScript compiler you're already running.
 
-The API is deliberately small. You define routes with a builder, register them once through module augmentation, and that's it. Routes nest and types inherit down the tree. There's no config file, no CLI, no codegen step. The whole thing ships at ~4kB gzipped before tree-shaking.
+The API is deliberately small. You define routes with a builder, register them once through module augmentation, and that's it. There's no config file, no CLI, no codegen step. The whole thing ships at ~4kB gzipped before tree-shaking.
 
 TypeRoute doesn't try to be a framework. It doesn't own your data fetching, your file structure, or force you into SSR. It handles routing - matching URLs to components and managing navigation - and stays out of the way for everything else.
 
@@ -262,6 +262,8 @@ const about = route("/about").component(Layout).component(AboutPage);
 Building from a shared base enables code reuse - you avoid repeating common configuration, while each route still stands on its own. At runtime, there's no parent/child route tree, just a flat list of self-contained routes.
 
 This is why layouts naturally emerge from shared bases: when `home` and `about` both start their component stack with `Layout`, that shared UI stays mounted as users navigate between them. There is no special layout feature - it follows directly from how component stacks render.
+
+In the rest of the docs, we refer to a shared base route that provides surrounding UI for derived routes as a **layout route**.
 
 You can build as many levels deep as you need:
 
@@ -773,7 +775,7 @@ navigate({ url: "/callback", replace: true, state: { data: 123 } });
 
 ## Declarative navigation
 
-For redirects triggered by rendering rather than events, use the `Navigate` component. It navigates as soon as it mounts, making it useful for conditional redirects based on application state:
+For redirects triggered by rendering rather than events, use the `Navigate` component. It navigates as soon as it mounts, so it works well for state-driven redirects:
 
 ```tsx
 import { Navigate } from "@typeroute/router";
@@ -1003,7 +1005,7 @@ const settings = dashboard
   .component(SettingsPage);
 ```
 
-Access all handles from the current route chain with `useHandles()`. It returns an array of all handles from the root down to the current matching route. This hook can be called from anywhere inside the route tree:
+Access all handles for the current matched route with `useHandles()`. It returns that route's handles in the order they were added. This hook can be called from anywhere inside the route tree:
 
 ```tsx
 function Breadcrumbs() {
@@ -1584,7 +1586,7 @@ function Layout() {
 }
 ```
 
-When visiting `/settings`, the document title becomes "Settings - App". The `useHandles()` hook returns handles from all routes in the current matching chain (from root to leaf), so reversing the array puts the most specific page first.
+When visiting `/settings`, the document title becomes "Settings - App". The `useHandles()` hook returns the route's handles in composition order, so reversing the array puts the most specific handle first.
 
 For type safety, register your handle type:
 
@@ -1903,7 +1905,7 @@ const strictMatch = useMatch({ from: "/users", strict: true });
 const filteredMatch = useMatch({ from: "/users/:id", params: { id: "admin" } });
 ```
 
-**`useHandles()`** returns the handles from the matched route chain.
+**`useHandles()`** returns the handles for the current matched route.
 
 - Returns: `Handle[]` - Array of handles
 
