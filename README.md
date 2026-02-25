@@ -261,7 +261,7 @@ const about = route("/about").component(Layout).component(AboutPage);
 
 Building from a shared base enables code reuse - you avoid repeating common configuration, while each route still stands on its own. At runtime, there's no parent/child route tree, just a flat list of self-contained routes.
 
-This is why layouts naturally emerge from shared bases: when `home` and `about` both start their component stack with `Layout`, that shared UI stays mounted as users navigate between them. There is no special layout feature - it follows directly from how component stacks render.
+Layouts naturally emerge from shared bases: when `home` and `about` both start their component stack with `Layout`, that shared UI stays mounted as users navigate between them. There is no special layout feature - it follows directly from how component stacks render.
 
 In the rest of the docs, we refer to a shared base route that provides surrounding UI for derived routes as a **layout route**.
 
@@ -805,7 +805,7 @@ Note that `Navigate` uses `useLayoutEffect` internally to ensure the navigation 
 
 # Index routes
 
-When you have a layout route, you often want content at the layout's path when no more specific route matches. Since `.component()` doesn't change the path, you create an index route by chaining directly on the layout:
+When you have a layout route, you often want default content at the layout's own path. This pattern is commonly called an index route. Since `.component()` doesn't change the path, you create an index route by chaining directly on the layout:
 
 ```tsx
 const dashboard = route("/dashboard").component(DashboardLayout);
@@ -830,7 +830,7 @@ const dashboard = route("/dashboard")
 const settings = dashboard.route("/settings").component(Settings);
 ```
 
-Under the hood, `.index(Comp)` is equivalent to `.component(() => useOutlet() ?? <Comp />)`. It renders `Overview` when no more specific route matches, and renders the outlet content when one does. Since the layout route is now navigable, include it in your routes collection:
+Under the hood, `.index(Comp)` is equivalent to `.component(() => useOutlet() ?? <Comp />)`. It renders `Overview` when no outlet content is available, and renders the outlet content otherwise. Since the layout route is now navigable, include it in your routes collection:
 
 ```tsx
 const routes = [dashboard, settings];
@@ -1005,7 +1005,7 @@ const settings = dashboard
   .component(SettingsPage);
 ```
 
-Access all handles for the current match with `useHandles()`. It returns that route's handles in the order they were added. This hook can be called from anywhere in the rendered route stack:
+Access all handles for the current match with `useHandles()`. It returns that route's handles in the order they were added. This hook can be called from anywhere under `RouterRoot`:
 
 ```tsx
 function Breadcrumbs() {
@@ -1409,7 +1409,7 @@ function AppLayout() {
 
 ## Matching a route anywhere
 
-Use `useMatch` to check if a route matches the current path from anywhere under `RouterRoot`. You can pass either a route pattern string or a route object, just like with `Link` and `navigate`. This is useful for conditional rendering, styling, access control, and more. It's also used internally by `useParams` and `Link`.
+Use `useMatch` to check if a route matches the current path. You can call it from anywhere under `RouterRoot`. You can pass either a route pattern string or a route object, just like with `Link` and `navigate`. This is useful for conditional rendering, styling, access control, and more. It's also used internally by `useParams` and `Link`.
 
 The hook returns a Match object (containing `route` and `params`) if there's a match, or `null` otherwise. There are two matching modes:
 
@@ -1739,7 +1739,7 @@ const dashboard = route("/dashboard").use(auth).component(Dashboard);
 const users = route("/users").component(UsersPage);
 ```
 
-**`.index(component)`** renders a component when no more specific route matches. See [Index routes](#index-routes).
+**`.index(component)`** renders a fallback component when no outlet content is available. See [Index routes](#index-routes).
 
 - `component` - `ComponentType` - A React component
 - Returns: `Route` - A new route object
@@ -1783,7 +1783,7 @@ const filter = route("/filter").search(raw => ({
 const admin = route("/admin").handle({ requiresAuth: true });
 ```
 
-**`.suspense(fallback)`** wraps the components that come after it in the component stack.
+**`.suspense(fallback)`** wraps the components that come after it in a Suspense boundary.
 
 - `fallback` - `ComponentType` - The fallback component to show while suspended
 - Returns: `Route` - A new route object
@@ -1857,7 +1857,7 @@ navigate({ to: "/home" });
 navigate(-1);
 ```
 
-**`useLocation()`** returns the current location, subscribes to changes.
+**`useLocation()`** returns the current location.
 
 - Returns: `HistoryLocation` - The current location with path, parsed search params, and history state
 
@@ -1865,7 +1865,7 @@ navigate(-1);
 const { path, search, state } = useLocation();
 ```
 
-**`useOutlet()`** returns the next rendered content in the current route stack.
+**`useOutlet()`** returns the next rendered content in the current component stack.
 
 - Returns: `ReactNode` - The next rendered outlet content or null
 
@@ -1924,7 +1924,7 @@ const handles = useHandles();
 <RouterRoot router={router} />
 ```
 
-**`Outlet`** renders the next content in the current route stack.
+**`Outlet`** renders the next content in the current component stack.
 
 ```tsx
 function Layout() {
