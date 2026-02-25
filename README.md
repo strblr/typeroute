@@ -362,24 +362,18 @@ There's no prescribed way to organize your routing code. Since TypeRoute isn't f
 
 That said, here's a pattern that tends to work well: define each route and its component in the same file, then export the route. This keeps everything related to that page in one place:
 
-<!-- prettier-ignore -->
 ```tsx
 // pages/home.tsx
 import { route } from "@typeroute/router";
 
-export const home = route("/").component(() => (
-  <div>Home page</div>
-));
+export const home = route("/").component(() => <div>Home page</div>);
 ```
 
-<!-- prettier-ignore -->
 ```tsx
 // pages/about.tsx
 import { route } from "@typeroute/router";
 
-export const about = route("/about").component(() => (
-  <div>About page</div>
-));
+export const about = route("/about").component(() => <div>About page</div>);
 ```
 
 Then add a file that re-exports all your routes:
@@ -1830,6 +1824,7 @@ const pagination = middleware().search(
     limit: z.coerce.number().catch(10)
   })
 );
+
 const auth = middleware()
   .handle({ requiresAuth: true })
   .component(AuthRedirect);
