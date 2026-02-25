@@ -31,9 +31,7 @@ export const route = <P extends string>(
   });
 };
 
-export const middleware = (): Middleware<{}> => {
-  return route("");
-};
+export const middleware = (): Middleware<{}> => route("");
 
 export class Route<
   P extends string = string,
@@ -142,7 +140,5 @@ export class Route<
     return this.component(errorBoundary(fallback));
   };
 
-  toString = (): P => {
-    return this._.pattern;
-  };
+  toString = () => this._.pattern;
 }
