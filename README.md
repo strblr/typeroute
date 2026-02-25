@@ -306,7 +306,7 @@ const routes = { home, about };
 
 This makes sure that only actual pages can be matched and appear in autocomplete. The order of routes in the collection doesn't matter - TypeRoute uses a [ranking algorithm](#route-matching-and-ranking) to pick the most specific match.
 
-The `RouterRoot` component is the entry point to TypeRoute. It listens to URL changes, matches the current path against your routes, and renders the matching route's component stack.
+The `RouterRoot` component is the entry point to TypeRoute. It listens to URL changes, matches the current path against your routes, and renders the matched route's component stack.
 
 The simplest setup passes your routes collection directly to `RouterRoot`. This creates a router instance internally (accessible via `useRouter`):
 
@@ -533,9 +533,9 @@ The resulting parsed object is what gets passed to the `.search()` function or s
 
 ## Inheritance
 
-When you define search params with a validator on a route, all child routes automatically inherit that validator along with its typing. This makes sense because when a child route matches, parent components also render (parents use outlets to display their children), so parent search params remain relevant.
+When you define search params with a validator on a route, routes derived from it inherit that validator and its typing. This makes sense because a matched route renders the shared components from the route it was built from, so those search params remain relevant.
 
-Here's how it works. Start with a parent route that defines a search param:
+Here's how it works. Start with a base route that defines a search param:
 
 ```tsx
 const dashboard = route("/dashboard")
@@ -547,7 +547,7 @@ const dashboard = route("/dashboard")
   .component(DashboardLayout);
 ```
 
-Any child route created from `dashboard` inherits the `view` search param and its validation:
+Any route derived from `dashboard` inherits the `view` search param and its validation:
 
 ```tsx
 const projects = dashboard.route("/projects").component(ProjectsPage);
@@ -558,9 +558,9 @@ function ProjectsPage() {
 }
 ```
 
-If a child route needs additional search params, define a new validator with `.search()`. Your validator receives the raw params from the URL merged with the parent's already-validated params. After validation, your result is combined with the parent's validated params to produce the final search params object.
+If a derived route needs additional search params, define a new validator with `.search()`. Your validator receives the raw params from the URL merged with the base route's already-validated params. After validation, your result is merged with them to produce the final search params object.
 
-In practice, this means you only need to validate the new params you're adding - the parent's params are automatically included in the final result:
+In practice, this means you only need to validate the new params you're adding - the base route's params are automatically included in the final result:
 
 ```tsx
 const projects = dashboard
@@ -574,8 +574,8 @@ const projects = dashboard
 
 function ProjectsPage() {
   const [search] = useSearch(projects);
-  // search.view: "grid" | "list" (from parent)
-  // search.status: "active" | "archived" (from child)
+  // search.view: "grid" | "list" (from base route)
+  // search.status: "active" | "archived" (from derived)
 }
 ```
 
@@ -645,7 +645,7 @@ Links automatically track whether they match the current URL. When active, they 
 By default, a link is considered active if the current path starts with the link's target (called "loose matching"). This means a link to `/dashboard` stays active on `/dashboard/settings`. To require an exact match, use the `strict` prop:
 
 ```tsx
-<Link to="/dashboard">Active on /dashboard and child routes</Link>
+<Link to="/dashboard">Active on /dashboard and deeper paths</Link>
 <Link strict to="/dashboard">Active only on /dashboard</Link>
 ```
 
@@ -805,7 +805,7 @@ Note that `Navigate` uses `useLayoutEffect` internally to ensure the navigation 
 
 # Index routes
 
-When you have a layout route, you often want content at the layout's path when no child route matches. Since `.component()` doesn't change the path, you create an index route by chaining directly on the layout:
+When you have a layout route, you often want content at the layout's path when no more specific route matches. Since `.component()` doesn't change the path, you create an index route by chaining directly on the layout:
 
 ```tsx
 const dashboard = route("/dashboard").component(DashboardLayout);
@@ -830,7 +830,7 @@ const dashboard = route("/dashboard")
 const settings = dashboard.route("/settings").component(Settings);
 ```
 
-Under the hood, `.index(Comp)` is equivalent to `.component(() => useOutlet() ?? <Comp />)`. It renders `Overview` when no child route matches, and the child's outlet when one does. Since the layout route is now navigable, include it in your routes collection:
+Under the hood, `.index(Comp)` is equivalent to `.component(() => useOutlet() ?? <Comp />)`. It renders `Overview` when no more specific route matches, and renders the outlet content when one does. Since the layout route is now navigable, include it in your routes collection:
 
 ```tsx
 const routes = [dashboard, settings];
@@ -864,14 +864,14 @@ const analytics = route("/analytics").lazy(() =>
 export function AnalyticsPage() { ... }
 ```
 
-Lazy routes work like any other route. Child routes inherit the parent's lazy-loaded components:
+Lazy routes work like any other route. Routes derived from a base route inherit its lazy-loaded components:
 
 ```tsx
 const dashboard = route("/dashboard").lazy(() => import("./Dashboard"));
 const settings = dashboard.route("/settings").component(Settings);
 ```
 
-When navigating to `/dashboard/settings`, React loads the dashboard component first, then renders settings inside it. The Dashboard component must include an `<Outlet />` for the child route to appear.
+When navigating to `/dashboard/settings`, React loads the dashboard component, then renders settings inside it. The Dashboard component must include an `<Outlet />` so the next matched content can appear.
 
 See [Route preloading](#route-preloading) for ways to load these components before the user navigates.
 
@@ -905,7 +905,7 @@ await queryClient.prefetchQuery({
 });
 ```
 
-Preload functions inherit to child routes:
+Preload functions are inherited by derived routes:
 
 ```tsx
 const dashboard = route("/dashboard")
@@ -949,7 +949,7 @@ function ErrorFallback({ error }: { error: unknown }) {
 }
 ```
 
-Error boundaries catch errors from all nested content. A common pattern is to place one at the root to catch any unhandled errors:
+Error boundaries catch errors from everything rendered after them in the component stack. A common pattern is to place one at the root to catch any unhandled errors:
 
 ```tsx
 const app = route("/").error(ErrorPage).component(AppLayout);
@@ -973,7 +973,7 @@ function LoadingPage() {
 }
 ```
 
-The suspense boundary wraps everything below it in the route tree. Place it strategically to control which parts of the UI show a loading state.
+The suspense boundary wraps the components that come after it in the component stack. Place it strategically to control which parts of the UI show a loading state.
 
 You can combine suspense with error boundaries:
 
@@ -1005,7 +1005,7 @@ const settings = dashboard
   .component(SettingsPage);
 ```
 
-Access all handles for the current matched route with `useHandles()`. It returns that route's handles in the order they were added. This hook can be called from anywhere inside the route tree:
+Access all handles for the current match with `useHandles()`. It returns that route's handles in the order they were added. This hook can be called from anywhere in the rendered route stack:
 
 ```tsx
 function Breadcrumbs() {
@@ -1358,7 +1358,7 @@ function NotFoundPage() {
 }
 ```
 
-This also works for scoped not-found pages. If you want a fallback specific to a section of your app, attach the catch-all to that section's parent route:
+This also works for scoped not-found pages. If you want a fallback specific to a section of your app, attach the catch-all to that section's base route:
 
 ```tsx
 const dashboard = route("/dashboard").component(DashboardLayout);
@@ -1409,7 +1409,7 @@ function AppLayout() {
 
 ## Matching a route anywhere
 
-Use `useMatch` to check if a route matches the current path from anywhere in your component tree. You can pass either a route pattern string or a route object, just like with `Link` and `navigate`. This is useful for conditional rendering, styling, access control, and more. It's also used internally by `useParams` and `Link`.
+Use `useMatch` to check if a route matches the current path from anywhere under `RouterRoot`. You can pass either a route pattern string or a route object, just like with `Link` and `navigate`. This is useful for conditional rendering, styling, access control, and more. It's also used internally by `useParams` and `Link`.
 
 The hook returns a Match object (containing `route` and `params`) if there's a match, or `null` otherwise. There are two matching modes:
 
@@ -1586,7 +1586,7 @@ function Layout() {
 }
 ```
 
-When visiting `/settings`, the document title becomes "Settings - App". The `useHandles()` hook returns the route's handles in composition order, so reversing the array puts the most specific handle first.
+When visiting `/settings`, the document title becomes "Settings - App". The `useHandles()` hook returns the route's handles in the order they were added, so reversing the array puts the most specific handle first.
 
 For type safety, register your handle type:
 
@@ -1710,9 +1710,9 @@ const user = route("/users/:id");
 const catchAll = route("/*");
 ```
 
-**`.route(pattern)`** creates a nested child route.
+**`.route(pattern)`** creates a new route by extending the current path.
 
-- `pattern` - `string` - The child path pattern to append
+- `pattern` - `string` - The path pattern to append
 - Returns: `Route` - A new route object
 
 ```tsx
@@ -1739,7 +1739,7 @@ const dashboard = route("/dashboard").use(auth).component(Dashboard);
 const users = route("/users").component(UsersPage);
 ```
 
-**`.index(component)`** renders a component when no child route matches. See [Index routes](#index-routes).
+**`.index(component)`** renders a component when no more specific route matches. See [Index routes](#index-routes).
 
 - `component` - `ComponentType` - A React component
 - Returns: `Route` - A new route object
@@ -1783,7 +1783,7 @@ const filter = route("/filter").search(raw => ({
 const admin = route("/admin").handle({ requiresAuth: true });
 ```
 
-**`.suspense(fallback)`** wraps nested content in a Suspense boundary.
+**`.suspense(fallback)`** wraps the components that come after it in the component stack.
 
 - `fallback` - `ComponentType` - The fallback component to show while suspended
 - Returns: `Route` - A new route object
@@ -1794,7 +1794,7 @@ const lazy = route("/lazy")
   .lazy(() => import("./Page"));
 ```
 
-**`.error(fallback)`** wraps nested content in an error boundary.
+**`.error(fallback)`** wraps the components that come after it in an error boundary.
 
 - `fallback` - `ComponentType<{ error: unknown }>` - The fallback component, receives the caught error as a prop
 - Returns: `Route` - A new route object
@@ -1865,9 +1865,9 @@ navigate(-1);
 const { path, search, state } = useLocation();
 ```
 
-**`useOutlet()`** returns the child route content.
+**`useOutlet()`** returns the next rendered content in the current route stack.
 
-- Returns: `ReactNode` - The child route's content or null
+- Returns: `ReactNode` - The next rendered outlet content or null
 
 ```tsx
 const outlet = useOutlet();
@@ -1905,7 +1905,7 @@ const strictMatch = useMatch({ from: "/users", strict: true });
 const filteredMatch = useMatch({ from: "/users/:id", params: { id: "admin" } });
 ```
 
-**`useHandles()`** returns the handles for the current matched route.
+**`useHandles()`** returns the handles for the current match.
 
 - Returns: `Handle[]` - Array of handles
 
@@ -1924,7 +1924,7 @@ const handles = useHandles();
 <RouterRoot router={router} />
 ```
 
-**`Outlet`** renders the child route content.
+**`Outlet`** renders the next content in the current route stack.
 
 ```tsx
 function Layout() {
