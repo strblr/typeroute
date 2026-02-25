@@ -108,9 +108,11 @@ If you believe there's a mistake in the comparison table, please [open an issue]
 - [Comparison](#comparison)
 - [Installation](#installation)
 - [Motivation](#motivation)
-- [Defining routes](#defining-routes)
-- [Nested routes and layouts](#nested-routes-and-layouts)
-- [Setting up the router](#setting-up-the-router)
+- [Routes](#routes)
+  - [Building a route](#building-a-route)
+  - [Component stacks and outlets](#component-stacks-and-outlets)
+  - [Deriving routes](#deriving-routes)
+  - [Setting up the router](#setting-up-the-router)
 - [Code organization](#code-organization)
 - [Path params](#path-params)
 - [Search params](#search-params)
@@ -179,11 +181,11 @@ TypeRoute doesn't try to be a framework. It doesn't own your data fetching, your
 
 ---
 
-# Defining routes
+# Routes
 
-Routes are created using the `route()` function, following the [builder pattern](https://dev.to/superviz/design-pattern-7-builder-pattern-10j4). You pass it a path and chain methods to configure the route.
+## Building a route
 
-The `.component()` method tells the route what to render when the path matches. It takes a React component and returns a new route instance with that component attached:
+Routes are created using the `route()` function, following the [builder pattern](https://dev.to/superviz/design-pattern-7-builder-pattern-10j4). You pass it a path and chain methods to configure the route. The `.component()` method takes a React component and tells the route what to render when the path matches:
 
 ```tsx
 import { route } from "@typeroute/router";
@@ -191,6 +193,8 @@ import { route } from "@typeroute/router";
 const home = route("/").component(HomePage);
 const about = route("/about").component(AboutPage);
 ```
+
+Every method on a route returns a new route instance - route building is immutable.
 
 Routes support dynamic segments (path params) using the `:param` syntax:
 
@@ -209,42 +213,57 @@ const files = route("/files/*").component(FileBrowser);
 const optional = route("/books/*?").component(FileBrowser);
 ```
 
-Route building is immutable: every method on a route returns a new route instance.
+## Component stacks and outlets
 
----
-
-# Nested routes and layouts
-
-Any route can have child routes:
+A route can carry multiple components. Each `.component()` call adds a component to the route's **component stack**:
 
 ```tsx
-const dashboard = route("/dashboard").component(DashboardLayout);
-
-const overview = dashboard.component(Overview);
-const settings = dashboard.route("/settings").component(Settings);
-const profile = dashboard.route("/profile").component(Profile);
+const home = route("/").component(Layout).component(HomePage);
 ```
 
-`.route()` extends the path: `settings` matches `/dashboard/settings` and `profile` matches `/dashboard/profile`. Chaining `.component()` directly (like `overview`) doesn't change the path, so `overview` matches `/dashboard`.
-
-All of them nest inside `dashboard`'s component. The parent renders an `<Outlet />` to mark where child routes should appear:
+When `/` matches, TypeRoute renders this stack from left to right: `Layout` first, then `HomePage` inside it. The connection between them is the `<Outlet />` component - each component in the stack renders an `<Outlet />` where the next component should appear:
 
 ```tsx
-function DashboardLayout() {
+function Layout() {
   return (
     <div>
-      <Sidebar />
+      <Nav />
       <main>
-        <Outlet />
+        <Outlet /> {/* HomePage renders here */}
       </main>
     </div>
   );
 }
 ```
 
-When the URL is `/dashboard/settings`, TypeRoute renders `DashboardLayout` with `Settings` inside the outlet. This is how you build layouts - shared UI like navigation or sidebars that stays mounted as users navigate between child routes.
+## Deriving routes
 
-You can nest as deep as you need:
+Since route building is immutable, you can take any route and build further from it. Calling the `.route()` method creates a new route that extends the path:
+
+```tsx
+const layout = route("/").component(Layout);
+
+const home = layout.component(HomePage);
+const about = layout.route("/about").component(AboutPage);
+```
+
+This creates two independent routes:
+
+- `home` matches `/` and renders `Layout → HomePage`
+- `about` matches `/about` and renders `Layout → AboutPage`
+
+Both routes carry their full component stack. They could have been written independently:
+
+```tsx
+const home = route("/").component(Layout).component(HomePage);
+const about = route("/about").component(Layout).component(AboutPage);
+```
+
+Building from a shared base enables code reuse - you avoid repeating common configuration, while each route still stands on its own. At runtime, there's no parent/child route tree, just a flat list of self-contained routes.
+
+This is why layouts naturally emerge from shared bases: when `home` and `about` both start their component stack with `Layout`, that shared UI stays mounted as users navigate between them. There is no special layout feature - it follows directly from how component stacks render.
+
+You can build as many levels deep as you need:
 
 ```tsx
 const app = route("/").component(AppShell);
@@ -255,7 +274,7 @@ const security = settings.route("/security").component(SecurityPage);
 
 For the path `/dashboard/settings/security`, this renders:
 
-```
+```text
 AppShell
   └── DashboardLayout
         └── SettingsLayout
@@ -264,16 +283,12 @@ AppShell
 
 Each level must include an `<Outlet />` to render the next level.
 
-Beyond paths and components, child routes also inherit search param validators, handles, and preload functions from their parent chain. While you can think of nesting as building a tree, every route is self-contained: it carries everything it needs to render, including all parent components.
+## Setting up the router
 
----
-
-# Setting up the router
-
-Before setting up the router, you need to collect your navigable routes into a collection (either array or record). When building nested route hierarchies, you'll often create intermediate parent routes solely for grouping and shared layouts. These intermediate routes shouldn't be included in your routes collection - only the final, navigable routes should be:
+Collect your routes into a collection (either an array or a record). Only include the final routes that represent actual pages - intermediate routes used purely for code reuse shouldn't be in the collection:
 
 ```tsx
-// Intermediate route used for shared layout
+// Intermediate route used for shared config
 const layout = route("/").component(Layout);
 
 // Navigable routes that users can actually visit
@@ -287,11 +302,11 @@ const routes = [home, about]; // ✅ Don't include `layout`
 const routes = { home, about };
 ```
 
-This makes sure that only actual pages can be matched and appear in autocomplete. The intermediate routes still exist as part of the build chain, they just aren't directly navigable. Note that the order of routes in the collection doesn't matter - TypeRoute uses a [ranking algorithm](#route-matching-and-ranking) to pick the most specific match.
+This makes sure that only actual pages can be matched and appear in autocomplete. The order of routes in the collection doesn't matter - TypeRoute uses a [ranking algorithm](#route-matching-and-ranking) to pick the most specific match.
 
-The `RouterRoot` component is the entry point to TypeRoute. It listens to URL changes, matches the current path against your routes, and renders the matching route's component hierarchy.
+The `RouterRoot` component is the entry point to TypeRoute. It listens to URL changes, matches the current path against your routes, and renders the matching route's component stack.
 
-There are two ways to set it up. The simplest is passing your routes collection directly to `RouterRoot`. This creates a router instance internally (accessible via `useRouter`):
+The simplest setup passes your routes collection directly to `RouterRoot`. This creates a router instance internally (accessible via `useRouter`):
 
 ```tsx
 import { RouterRoot } from "@typeroute/router";
