@@ -2174,14 +2174,13 @@ function App() {
 ```tsx
 import { route, RouterRoot, Outlet, Link } from "@typeroute/router";
 
-const layout = route("/").component(AppLayout);
-const home = layout.component(Home);
-const about = layout.route("/about").component(About);
-const notFound = layout.route("/*").component(NotFound);
+const home = route("/").component(Layout).index(Home);
+const about = home.route("/about").component(About);
+const notFound = home.route("/*").component(NotFound);
 
 const routes = [home, about, notFound];
 
-function AppLayout() {
+function Layout() {
   return (
     <div>
       <nav>
