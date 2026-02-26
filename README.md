@@ -154,6 +154,8 @@ If you believe there's a mistake in the comparison table, please [open an issue]
   - [Components](#components)
   - [History interface](#history-interface)
   - [Types](#types)
+- [Migration guides](#migration-guides)
+  - [Migrating from Wouter](#migrating-from-wouter)
 - [Roadmap](#roadmap)
 - [License](#license)
 
@@ -2104,6 +2106,101 @@ interface PreloadOptions {
   params: Params; // Path params for the route
   search: Search; // Validated search params
   context: Context; // Router context
+}
+```
+
+---
+
+# Migration guides
+
+## Migrating from Wouter
+
+Both libraries share a lightweight philosophy and compatible route pattern syntax (both based on [regexparam](https://github.com/lukeed/regexparam)), so most patterns migrate directly.
+
+The key difference is structure: Wouter uses inline JSX route components, while TypeRoute defines routes up front with the `route()` builder. Layouts are expressed with [outlets](#component-stacks-and-outlets) rather than JSX wrappers. Wouter also lacks type safety.
+
+One limitation to account for: Wouter's regex route patterns (for example, `/^\/(?<word>[a-z]+)$/`) are not supported, so those need to be rewritten as standard path patterns.
+
+After migrating, you also get features Wouter doesn't have, such as [search param validation](#search-params), [lazy loading](#lazy-loading), [data preloading](#data-preloading), [route ranking](#route-matching-and-ranking), [devtools](#devtools), etc.
+
+Here's how a typical Wouter app translates to TypeRoute:
+
+| Wouter                                           | TypeRoute                                                     |
+| ------------------------------------------------ | ------------------------------------------------------------- |
+| `<Route path="/about" component={About} />`      | `route("/about").component(About)`                            |
+| `<Switch>` (first-match routing)                 | Not needed ([ranking algorithm](#route-matching-and-ranking)) |
+| `<Route component={NotFound} />` (default route) | `route("/*").component(NotFound)`                             |
+| `<Link href="/about">`                           | `<Link to="/about">`                                          |
+| `<Link href="/users/42">`                        | `<Link to={user} params={{ id: "42" }}>`                      |
+| `<Redirect to="/home" />`                        | `<Navigate to="/home" />`                                     |
+| `const [loc, nav] = useLocation()`               | `useLocation()` + `useNavigate()`                             |
+| `navigate("/path")`                              | `navigate({ to: "/path" })`                                   |
+| `navigate("/x", { replace: true })`              | `navigate({ to: "/x", replace: true })`                       |
+| `const [match, params] = useRoute("/users/:id")` | `const match = useMatch({ from: user })`                      |
+| `useParams()` (from closest Route)               | `useParams(route)` (explicit, typed)                          |
+| `useSearch()` (raw query string)                 | `useSearch(route)` (validated, typed, with setter)            |
+| `<Router base="/app">`                           | `<RouterRoot basePath="/app" />`                              |
+| `useHashLocation` hook                           | `history={new HashHistory()}`                                 |
+| `memoryLocation({ path: "/x" })`                 | `history={new MemoryHistory("/x")}`                           |
+
+An example of the same app in both libraries:
+
+**Wouter:**
+
+```tsx
+import { Router, Route, Switch, Link } from "wouter";
+
+function App() {
+  return (
+    <Router base="/app">
+      <div>
+        <nav>
+          <Link href="/">Home</Link>
+          <Link href="/about">About</Link>
+        </nav>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/about" component={About} />
+          <Route component={NotFound} />
+        </Switch>
+      </div>
+    </Router>
+  );
+}
+```
+
+**TypeRoute:**
+
+```tsx
+import { route, RouterRoot, Outlet, Link } from "@typeroute/router";
+
+const layout = route("/").component(AppLayout);
+const home = layout.component(Home);
+const about = layout.route("/about").component(About);
+const notFound = layout.route("/*").component(NotFound);
+
+const routes = [home, about, notFound];
+
+function AppLayout() {
+  return (
+    <div>
+      <nav>
+        <Link to="/">Home</Link>
+        <Link to="/about">About</Link>
+      </nav>
+      <Outlet />
+    </div>
+  );
+}
+
+function App() {
+  return <RouterRoot routes={routes} basePath="/app" />;
+}
+
+declare module "@typeroute/router" {
+  interface Register {
+    routes: typeof routes;
+  }
 }
 ```
 
