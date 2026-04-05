@@ -2207,6 +2207,7 @@ declare module "@typeroute/router" {
 
 # Roadmap
 
+- Suspense-backed preload so route UI waits on preloaders, with chained preloaders that receive the parent's return value, and the ability to redirect from a preloader
 - Navigation blockers (`useBlocker`, etc.)
 - Accept any route object in `useParams`, `useSearch`, and `useMatch` (not just globally registered routes)
 - Allow `route()` and `.route()` to be called without arguments (defaulting to `"/"`)
