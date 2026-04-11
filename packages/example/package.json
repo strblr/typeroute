@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.90.20",
+    "@tanstack/react-query": "^5.96.2",
     "@typeroute/devtools": "workspace:*",
     "@typeroute/router": "workspace:*",
     "react": "^19.2.4",
@@ -16,11 +16,11 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.8",
-    "@types/react": "^19.2.11",
+    "@types/bun": "^1.3.12",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.3",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.8"
   }
 }
