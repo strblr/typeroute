@@ -178,7 +178,7 @@ export const Link = <P extends Pattern>(props: LinkProps<P>): ReactNode => {
   const anchorProps = {
     ...rest,
     ref: mergeRefs(ref, rest.ref),
-    href: url,
+    href: router.history.createHref?.(url) ?? url,
     onClick,
     onFocus: intentEvent(schedulePreload, rest.onFocus),
     onBlur: intentEvent(cancelPreload, rest.onBlur),

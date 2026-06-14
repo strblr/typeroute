@@ -11,4 +11,6 @@ export class HashHistory extends BrowserHistory {
     const { url, replace, state } = options;
     history[replace ? "replaceState" : "pushState"](state, "", `#${url}`);
   };
+
+  createHref = (url: string) => `#${url}`;
 }

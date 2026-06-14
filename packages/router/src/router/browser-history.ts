@@ -38,6 +38,8 @@ export class BrowserHistory implements HistoryLike {
     history[replace ? replaceStateEvent : pushStateEvent](state, "", url);
   };
 
+  createHref = (url: string) => url;
+
   subscribe = (listener: () => void) => {
     events.forEach(event => addEventListener(event, listener));
     return () => {
