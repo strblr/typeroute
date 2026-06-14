@@ -122,6 +122,7 @@ export interface HistoryLike {
   location: () => HistoryLocation;
   go: (delta: number) => void;
   push: (options: HistoryPushOptions) => void;
+  createHref?: (url: string) => string;
   subscribe: (listener: () => void) => () => void;
 }
 

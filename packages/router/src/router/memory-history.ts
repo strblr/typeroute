@@ -36,6 +36,8 @@ export class MemoryHistory implements HistoryLike {
     this.listeners.forEach(listener => listener());
   };
 
+  createHref = (url: string) => url;
+
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => {
